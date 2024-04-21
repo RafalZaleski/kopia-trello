@@ -6,8 +6,17 @@
         "build": "vite build"
     },
     "devDependencies": {
+        "@mdi/font": "^7.3.67",
+        "@vitejs/plugin-vue": "^4.4.0",
         "axios": "^1.6.4",
         "laravel-vite-plugin": "^1.0.0",
         "vite": "^5.0.0"
+    },
+    "dependencies": {
+        "@kyvg/vue3-notification": "^3",
+        "vue": "^3",
+        "vue-router": "^4",
+        "vuetify": "^3",
+        "vuex": "^4"
     }
 }
