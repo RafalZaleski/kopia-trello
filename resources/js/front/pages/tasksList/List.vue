@@ -17,12 +17,6 @@
             Nazwa
           </th>
           <th class="text-left">
-            Kategoria
-          </th>
-          <th class="text-left">
-            Link
-          </th>
-          <th class="text-left">
             Akcje
           </th>
         </tr>
@@ -33,8 +27,6 @@
           :key="task.name"
         >
           <td>{{ task.name }}</td>
-          <td>{{ task.category }}</td>
-          <td><a v-if="task.shop_url" :href="task.shop_url" target="_blank">Link</a></td>
           <td>
               <v-btn
                 :disabled="store.getters.isLoading"

@@ -1,5 +1,6 @@
 <?php
 
+use App\Modules\ToDoList\Tasks\Controllers\TaskController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -14,6 +15,7 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
-    return $request->user();
-});
+Route::get('/get-tasks-all', [TaskController::class, 'indexAll']);
+Route::get('/tasks/sync-updated', [TaskController::class, 'syncUpdated']);
+Route::get('/tasks/sync-deleted', [TaskController::class, 'syncDeleted']);
+Route::resource('tasks', TaskController::class)->except(['create', 'edit']);

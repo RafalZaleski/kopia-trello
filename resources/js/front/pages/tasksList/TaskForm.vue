@@ -49,8 +49,6 @@
   
     async function submit () {
       form.value.name = form.value.name.toLowerCase();
-      form.value.category_id = category.value.id;
-      form.value.default_unit_id = unit.value.id;
 
       if (props.taskId) {
           await apiTasks.edit(props.taskId, form);

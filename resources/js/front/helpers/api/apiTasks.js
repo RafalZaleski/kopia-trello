@@ -10,7 +10,7 @@ export class Tasks {
         this.store.commit('startLoading');
 
         if (this.store.state.tasks.length === 0) {
-            await axios.get('/api/get-task-all')
+            await axios.get('/api/get-tasks-all')
             .then((response) => {
                 this.store.commit('syncItems', { name: 'tasks', payload: response.data.data });
             })
