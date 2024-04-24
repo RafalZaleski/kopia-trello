@@ -10,7 +10,7 @@
       <v-navigation-drawer v-model="drawer">
         <v-list>
           <!-- <div v-if="store.getters.isLogin"> -->
-            <router-link :to="{ name: 'tasks' }"><v-list-item title="Lista zadań"></v-list-item></router-link>
+            <router-link :to="{ name: 'boards' }"><v-list-item title="Lista tablic"></v-list-item></router-link>
             <!-- <router-link :to="{ name: 'logout' }"> -->
               <!-- <v-btn color="green" style="position: fixed; bottom: 85px; left: 30px;">Wyloguj się</v-btn> -->
             <!-- </router-link> -->
@@ -44,7 +44,6 @@
   import { useStore } from 'vuex';
   import { useNotification } from "@kyvg/vue3-notification";
   import { useRouter } from 'vue-router';
-  // import { Auth } from './helpers/api/apiAuth';
   import { onMounted } from 'vue';
   // import { sync, syncAuto } from './helpers/sync';
 
@@ -52,9 +51,8 @@
   const router = useRouter();
   const { notify } = useNotification();
   const theme = useTheme();
-  // const apiAuth = new Auth(store);
 
-  const drawer = ref(true);
+  const drawer = ref(false);
 
   const themeName = computed(() => {
     return theme.global.current.value.dark ? 'light' : 'dark';
@@ -62,11 +60,14 @@
 
   function toggleTheme() {
     theme.global.name.value = theme.global.current.value.dark ? 'light' : 'dark';
+    store.commit('setViewMode', theme.global.name.value);
   };
 
   onMounted(async () => {
     store.commit('setRouter', router);
     store.commit('setNotify', notify);
+    
+    theme.global.name.value = store.state.viewMode;
     // await apiAuth.isLogged().then(() => {
       // setTimeout(() => {
         // if (store.getters.isLogin) {

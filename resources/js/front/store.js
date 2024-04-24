@@ -5,8 +5,13 @@ export default createStore({
     return {
       login: false,
       loadingCounter: 0,
+      viewMode: localStorage.getItem('viewMode') ?? 'light',
       router: null,
       notify: null,
+      boards: JSON.parse(localStorage.getItem('boards')) ?? [],
+      boardsSyncDate: localStorage.getItem('boardsSyncDate') ?? null,
+      catalogs: JSON.parse(localStorage.getItem('catalogs')) ?? [],
+      catalogsSyncDate: localStorage.getItem('catalogsSyncDate') ?? null,
       tasks: JSON.parse(localStorage.getItem('tasks')) ?? [],
       tasksSyncDate: localStorage.getItem('tasksSyncDate') ?? null,
     }
@@ -21,11 +26,19 @@ export default createStore({
   },
   mutations: {
     restartState(state) {
+      localStorage.removeItem('boards')
+      localStorage.removeItem('boardsSyncDate')
+      localStorage.removeItem('catalogs')
+      localStorage.removeItem('catalogsSyncDate')
       localStorage.removeItem('tasks')
       localStorage.removeItem('tasksSyncDate')
       state.login = false;
       state.tasks = [];
       state.tasksSyncDate = null;
+      state.boards = [];
+      state.boardsSyncDate = null;
+      state.catalogs = [];
+      state.catalogsSyncDate = null;
     },
     login(state) {
       state.login = true;
@@ -44,6 +57,10 @@ export default createStore({
     },
     setNotify(state, payload) {
       state.notify = payload;
+    },
+    setViewMode(state, payload) {
+      state.viewMode = payload;
+      localStorage.setItem('viewMode', payload);
     },
     addItemIn(state, payload) {
       state[payload.name].push(payload.payload);

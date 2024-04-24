@@ -2,12 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\ToDoList\Tasks\Resources;
+namespace App\Modules\ToDoList\Comments\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ApiTaskResource extends JsonResource
+class ApiCommentResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -18,12 +18,7 @@ class ApiTaskResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'name' => $this->name,
             'description' => $this->description,
-            'date' => $this->date,
-            'place' => $this->place,
-            'position' => $this->position,
-            'comments' => $this->comments,
         ];
     }
 }

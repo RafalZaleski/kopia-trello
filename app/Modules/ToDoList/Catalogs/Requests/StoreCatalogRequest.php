@@ -1,10 +1,10 @@
 <?php
 
-namespace App\Modules\ToDoList\Tasks\Requests;
+namespace App\Modules\ToDoList\Catalogs\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class StoreTaskRequest extends FormRequest
+class StoreCatalogRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -22,11 +22,9 @@ class StoreTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'catalog_id' => ['required', 'gt:0'],
+            'board_id' => ['required', 'gt:0'],
             'name' => ['required', 'min:3', 'max:255'],
             'description' => ['max:65536'],
-            'date' => [],
-            'place' => [],
             'position' => ['required', 'gte:0'],
         ];
     }

@@ -2,14 +2,24 @@
   <div v-if="isOpen">
     <div class="cover" @click="emit('modal-close')"></div>
     <v-sheet class="sheet">
-      <div v-if="props.taskId">Edytuj produkt</div>
-      <div v-else>Dodaj produkt</div>
+      <div v-if="props.catalogId">Edytuj katalog</div>
+      <div v-else>Dodaj katalog</div>
       <v-form @submit.prevent="submit">
+        <input type="hidden" v-model="form.board_id">
         <v-text-field
           v-model="form.name"
           label="Nazwa"
           :rules="rules"
           :autofocus="true"
+        ></v-text-field>
+        <v-textarea
+          v-model="form.description"
+          label="Opis"
+        ></v-textarea>
+        <v-text-field
+          v-model="form.position"
+          label="pozycja"
+          :rules="rules"
         ></v-text-field>
         <v-btn
           :loading="store.getters.isLoading"
@@ -24,19 +34,21 @@
 <script setup>
   
     import { ref } from 'vue';
+    import { useRoute } from 'vue-router';
     import { useStore } from 'vuex';
-    import { Tasks } from '../../helpers/api/apiTasks';
+    import { Catalogs } from '../../helpers/api/apiCatalogs';
       
+    const route = useRoute();
     const store = useStore();
-    const apiTasks = new Tasks(store);
+    const apiCatalogs = new Catalogs(store);
 
     const props = defineProps({
         isOpen: Boolean,
-        taskId: Number
+        catalogId: Number
     });
     const emit = defineEmits(["modal-close"]);
   
-    const form = ref({ name: '' });
+    const form = ref({ board_id: route.params.id, name: '', description: null, position: 0 });
    
   
     const rules = [
@@ -48,18 +60,16 @@
     ];
   
     async function submit () {
-      form.value.name = form.value.name.toLowerCase();
-
-      if (props.taskId) {
-          await apiTasks.edit(props.taskId, form);
+      if (props.catalogId) {
+          await apiCatalogs.edit(props.catalogId, form);
       } else {
-          await apiTasks.add(form);
+          await apiCatalogs.add(form);
       }
       emit('modal-close');
     }
 
-    if (props.taskId) {
-      apiTasks.get(props.taskId, form);
+    if (props.catalogId) {
+      apiCatalogs.get(props.catalogId, form);
     }
 
 </script>
@@ -81,4 +91,4 @@
     left: calc(50% - 180px);
     top: 100px;
   }
-</style>../../helpers/api/apiTasks
+</style>

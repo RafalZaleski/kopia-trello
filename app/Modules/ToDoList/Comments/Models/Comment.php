@@ -2,42 +2,31 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\ToDoList\Tasks\Models;
+namespace App\Modules\ToDoList\Comments\Models;
 
-use App\Modules\ToDoList\Catalogs\Models\Catalog;
-use App\Modules\ToDoList\Comments\Models\Comment;
+use App\Modules\ToDoList\Tasks\Models\Task;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Relations\BelongsTo;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Spatie\MediaLibrary\HasMedia;
 use Spatie\MediaLibrary\InteractsWithMedia;
 use Spatie\Image\Manipulations;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class Task extends Model implements HasMedia
+class Comment extends Model implements HasMedia
 {
     use InteractsWithMedia, SoftDeletes;
     
-    protected $table = 'tasks';
+    protected $table = 'comments';
 
     protected $fillable = [
-        'catalog_id',
-        'name',
         'description',
-        'date',
-        'place',
-        'position',
+        'task_id',
     ];
 
-    public function comments(): HasMany
+    public function task(): BelongsTo
     {
-        return $this->hasMany(Comment::class);
-    }
-
-    public function catalog(): BelongsTo
-    {
-        return $this->belongsTo(Catalog::class);
+        return $this->belongsTo(Task::class);
     }
 
     // todo skalowanie do max width 1920 lub max height 1080

@@ -56,7 +56,7 @@
       color="green"
       style="position:fixed; bottom: 30px; right: 30px;"
     >Dodaj zadanie</v-btn>
-    <TaskForm v-if="taskId !== false" :taskId="taskId" :isOpen="isModalOpened" @modal-close="closeModal()"></TaskForm>
+    <Form v-if="taskId !== false" :taskId="taskId" :isOpen="isModalOpened" @modal-close="closeModal()"></Form>
 </template>
 
 <script setup>
@@ -64,7 +64,7 @@
   import { ref, onMounted, watch } from 'vue';
   import { useStore } from 'vuex';
   import { Tasks } from '../../helpers/api/apiTasks';
-  import TaskForm from './TaskForm.vue';  
+  import Form from './Form.vue';  
 
   const store = useStore();
   const apiTasks = new Tasks(store);
