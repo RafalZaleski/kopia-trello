@@ -18,6 +18,7 @@ class ApiTaskResource extends JsonResource
     {
         return [
             'id' => $this->id,
+            'catalog_id' => $this->catalog_id,
             'name' => $this->name,
             'description' => $this->description,
             'date' => $this->date,

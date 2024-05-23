@@ -22,7 +22,6 @@ class UpdateCatalogRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'board_id' => ['required', 'gt:0'],
             'name' => ['required', 'min:3', 'max:255'],
             'description' => ['max:65536'],
             'position' => ['required', 'gte:0'],

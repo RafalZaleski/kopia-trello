@@ -5,7 +5,6 @@
       <div v-if="props.catalogId">Edytuj katalog</div>
       <div v-else>Dodaj katalog</div>
       <v-form @submit.prevent="submit">
-        <input type="hidden" v-model="form.board_id">
         <v-text-field
           v-model="form.name"
           label="Nazwa"
@@ -34,11 +33,9 @@
 <script setup>
   
     import { ref } from 'vue';
-    import { useRoute } from 'vue-router';
     import { useStore } from 'vuex';
     import { Catalogs } from '../../helpers/api/apiCatalogs';
       
-    const route = useRoute();
     const store = useStore();
     const apiCatalogs = new Catalogs(store);
 
@@ -48,7 +45,7 @@
     });
     const emit = defineEmits(["modal-close"]);
   
-    const form = ref({ board_id: route.params.id, name: '', description: null, position: 0 });
+    const form = ref({ board_id: null, name: '', description: null, position: 0 });
    
   
     const rules = [
@@ -60,6 +57,8 @@
     ];
   
     async function submit () {
+      form.value.board_id = store.state.route.params.id;
+
       if (props.catalogId) {
           await apiCatalogs.edit(props.catalogId, form);
       } else {

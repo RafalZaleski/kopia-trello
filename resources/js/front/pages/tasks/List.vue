@@ -1,6 +1,6 @@
 <template>
     <div>Lista zadań</div>
-    <v-text-field
+    <!-- <v-text-field
       v-model="search"
       label="Wyszukaj"
       :autofocus="true"
@@ -9,7 +9,16 @@
       v-model="pagination.current"
       :length="pagination.total"
       rounded="circle"
-    ></v-pagination>
+    ></v-pagination> -->
+    <router-link :to="{ name: 'catalogs', params: { id: boardId } }">
+      <v-btn 
+        :disabled="store.getters.isLoading"
+        color="green"
+        class="ma-1"
+      >
+        Wstecz
+      </v-btn>
+    </router-link>
     <v-table>
       <thead>
         <tr>
@@ -73,8 +82,9 @@
   const pagination = ref({current: 1, total: Math.ceil(store.state.tasks.length / perPage), perPage: perPage});
   const showTasks = ref([]);
   const taskId = ref(false);
-  const search = ref('');
-  const timeout = ref(null);
+  const boardId = ref(store.state.catalogs.find((elem) => elem.id == store.state.route.params.id).board_id);
+  // const search = ref('');
+  // const timeout = ref(null);
 
   const isModalOpened = ref(false);
   const openModal = () => {
@@ -96,29 +106,30 @@
   }
 
   function filterTasksToShow() {
-    if (search.value != '') {
-      let total = 0;
-      const results = store.state.tasks.filter(
-            (val) => {
-              if (val.name.includes(search.value)) {
-                total++;
-                if (total >= ((pagination.value.current - 1) * pagination.value.perPage)
-                  && (total < (pagination.value.current * pagination.value.perPage))) {
-                    return true;
-                  }
-                }
+    // if (search.value != '') {
+    //   let total = 0;
+    //   const results = store.state.tasks.filter(
+    //         (val) => {
+    //           if (val.name.includes(search.value)) {
+    //             total++;
+    //             if (total >= ((pagination.value.current - 1) * pagination.value.perPage)
+    //               && (total < (pagination.value.current * pagination.value.perPage))) {
+    //                 return true;
+    //               }
+    //             }
               
-              return false;
-            });
-      pagination.value.total = Math.ceil(total / pagination.value.perPage);
-      return results;
-    } else {
-      pagination.value.total = Math.ceil(store.state.tasks.length / pagination.value.perPage);
-      return store.state.tasks.filter(
+    //           return false;
+    //         });
+    //   pagination.value.total = Math.ceil(total / pagination.value.perPage);
+    //   return results;
+    // } else {
+      const results = store.state.catalogs.find((elem) => elem.id == store.state.route.params.id).tasks;
+      pagination.value.total = Math.ceil(results.length / pagination.value.perPage);
+      return results.filter(
             (val, key) => 
               (key >= ((pagination.value.current - 1) * pagination.value.perPage))
               && (key < (pagination.value.current * pagination.value.perPage)));
-    }
+    // }
   }
 
   function editTaskForm(id) {
@@ -127,6 +138,11 @@
   }
 
   onMounted(async () => {
+    if (!store.getters.useLocalStorage) {
+        localStorage.removeItem('tasks')
+        store.state.tasks = [];
+    }
+
     await apiTasks.getAll();
     showTasks.value = filterTasksToShow();
   })
@@ -141,18 +157,18 @@
     () => pagination.value.total = Math.ceil(store.state.tasks.length / perPage)
   )
 
-  watch(
-    () => search.value,
-    () => {
-      if (timeout.value) {
-        clearTimeout(timeout.value);
-      }
+  // watch(
+  //   () => search.value,
+  //   () => {
+  //     if (timeout.value) {
+  //       clearTimeout(timeout.value);
+  //     }
 
-      timeout.value = setTimeout(() => {
-        search.value = search.value.toLowerCase();
-        pagination.value.current = 1;
-        showTasks.value = filterTasksToShow();
-      }, 300);
-    }
-  )
+  //     timeout.value = setTimeout(() => {
+  //       search.value = search.value.toLowerCase();
+  //       pagination.value.current = 1;
+  //       showTasks.value = filterTasksToShow();
+  //     }, 300);
+  //   }
+  // )
 </script>

@@ -6,8 +6,10 @@ export default createStore({
       login: false,
       loadingCounter: 0,
       viewMode: localStorage.getItem('viewMode') ?? 'light',
+      route: null,
       router: null,
       notify: null,
+      useLocalStorage: localStorage.getItem('useLocalStorage') ?? false,
       boards: JSON.parse(localStorage.getItem('boards')) ?? [],
       boardsSyncDate: localStorage.getItem('boardsSyncDate') ?? null,
       catalogs: JSON.parse(localStorage.getItem('catalogs')) ?? [],
@@ -22,7 +24,10 @@ export default createStore({
       },
       isLogin(state) {
         return state.login;
-    },
+      },
+      useLocalStorage(state) {
+        return (state.useLocalStorage == 'true' || state.useLocalStorage == true) ?? false;
+      },
   },
   mutations: {
     restartState(state) {
@@ -32,6 +37,7 @@ export default createStore({
       localStorage.removeItem('catalogsSyncDate')
       localStorage.removeItem('tasks')
       localStorage.removeItem('tasksSyncDate')
+      state.useLocalStorage = false,
       state.login = false;
       state.tasks = [];
       state.tasksSyncDate = null;
@@ -52,6 +58,9 @@ export default createStore({
     stopLoading(state) {
       state.loadingCounter--;
     },
+    setRoute(state, payload) {
+      state.route = payload;
+    },
     setRouter(state, payload) {
       state.router = payload;
     },
@@ -61,6 +70,11 @@ export default createStore({
     setViewMode(state, payload) {
       state.viewMode = payload;
       localStorage.setItem('viewMode', payload);
+    },
+    setUseLocalStorage(state) {
+      const useLocalStorage = (state.useLocalStorage == 'false' || state.useLocalStorage == false) ?? false;
+      state.useLocalStorage = useLocalStorage;
+      localStorage.setItem('useLocalStorage', useLocalStorage);
     },
     addItemIn(state, payload) {
       state[payload.name].push(payload.payload);

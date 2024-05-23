@@ -37,7 +37,7 @@ class TaskController extends Controller
 
     public function indexAll(): AnonymousResourceCollection
     {
-        return ApiTaskResource::collection(Task::select(['id', 'name'])->get());
+        return ApiTaskResource::collection(Task::select(['id', 'name'])->orderBy('position')->get());
     }
 
     public function index(): AnonymousResourceCollection
@@ -52,6 +52,10 @@ class TaskController extends Controller
         $data = $request->validated();
         $data['name'] = mb_strtolower(trim($data['name']));
 
+        $data['positions'] = Task::select('position')
+            ->where('catalog_id', $data['catalog_id'])
+            ->max('position');
+
         return new ApiTaskResource(Task::create($data));
     }
 
@@ -64,6 +68,27 @@ class TaskController extends Controller
     {
         $data = $request->validated();
         $data['name'] = mb_strtolower(trim($data['name']));
+
+        if ($data['catalog_id'] == $task->catalog_id) {
+            if ($data['position'] < $task->position) {
+                Task::where('catalog_id', $data['catalog_id'])
+                    ->where('position', '>=', $data['position'])
+                    ->increment('position');
+            } else {
+                Task::where('catalog_id', $data['catalog_id'])
+                    ->where('position', '<=', $data['position'])
+                    ->where('position', '>', $task->position)
+                    ->decrement('position');
+            }
+        } else {
+            Task::where('catalog_id', $data['catalog_id'])
+                ->where('position', '>=', $data['position'])
+                ->increment('position');
+            
+            Task::where('catalog_id', $task->catalog_id)
+                ->where('position', '>', $task->position)
+                ->decrement('position');
+        }
         
         $task->update($data);
 

@@ -22,11 +22,23 @@
             <!-- </router-link> -->
             <!-- <router-link v-if="!store.state.login" :to="{name: 'register'}"><v-list-item title="Zarejestruje się"></v-list-item></router-link> -->
           <!-- </div> -->
+          <v-btn
+            :disabled="store.getters.isLoading"
+            @click="restartState()"
+            color="green"
+            style="position:fixed; bottom: 120px; left: 30px;"
+          >Resetuj stan apki</v-btn>
           <v-switch
-          style="position: fixed; bottom: 0px; left: 30px;"
+            :model-value="store.getters.useLocalStorage"
+            style="position: fixed; bottom: 40px; left: 30px;"
+            @change="toggleUseLocalStore()"
+            label="użyj local storage"
+          ></v-switch>
+          <v-switch
+            style="position: fixed; bottom: 0px; left: 30px;"
             @change="toggleTheme()"
             :label="'change to ' + themeName"
-        ></v-switch>
+          ></v-switch>
         </v-list>
       </v-navigation-drawer>
 
@@ -41,12 +53,14 @@
 <script setup>
   import { useTheme } from 'vuetify';
   import { ref, computed } from 'vue';
+  import { useRoute } from 'vue-router';
   import { useStore } from 'vuex';
   import { useNotification } from "@kyvg/vue3-notification";
   import { useRouter } from 'vue-router';
   import { onMounted } from 'vue';
   // import { sync, syncAuto } from './helpers/sync';
 
+  const route = useRoute();
   const store = useStore();
   const router = useRouter();
   const { notify } = useNotification();
@@ -63,7 +77,16 @@
     store.commit('setViewMode', theme.global.name.value);
   };
 
+  function toggleUseLocalStore() {
+    store.commit('setUseLocalStorage');
+  };
+
+  function restartState() {
+    store.commit('restartState');
+  };
+
   onMounted(async () => {
+    store.commit('setRoute', route);
     store.commit('setRouter', router);
     store.commit('setNotify', notify);
     

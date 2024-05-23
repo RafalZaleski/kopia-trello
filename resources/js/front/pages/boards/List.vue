@@ -1,6 +1,6 @@
 <template>
     <div>Lista tablic</div>
-    <v-text-field
+    <!-- <v-text-field
       v-model="search"
       label="Wyszukaj"
       :autofocus="true"
@@ -9,7 +9,7 @@
       v-model="pagination.current"
       :length="pagination.total"
       rounded="circle"
-    ></v-pagination>
+    ></v-pagination> -->
     <v-table>
       <thead>
         <tr>
@@ -29,7 +29,7 @@
           v-for="board in showBoards"
           :key="board.name"
         >
-          <td><router-link :to="{ name: 'components', params: { id: board.id } }">{{ board.name }}</router-link></td>
+          <td><router-link :to="{ name: 'catalogs', params: { id: board.id } }">{{ board.name }}</router-link></td>
           <td>{{ board.description }}</td>
           <td>
               <v-btn
@@ -77,8 +77,8 @@
   const pagination = ref({current: 1, total: Math.ceil(store.state.tasks.length / perPage), perPage: perPage});
   const showBoards = ref([]);
   const boardId = ref(false);
-  const search = ref('');
-  const timeout = ref(null);
+  // const search = ref('');
+  // const timeout = ref(null);
 
   const isModalOpened = ref(false);
   const openModal = () => {
@@ -100,29 +100,29 @@
   }
 
   function filterBoardsToShow() {
-    if (search.value != '') {
-      let total = 0;
-      const results = store.state.boards.filter(
-            (val) => {
-              if (val.name.includes(search.value)) {
-                total++;
-                if (total >= ((pagination.value.current - 1) * pagination.value.perPage)
-                  && (total < (pagination.value.current * pagination.value.perPage))) {
-                    return true;
-                  }
-                }
+    // if (search.value != '') {
+    //   let total = 0;
+    //   const results = store.state.boards.filter(
+    //         (val) => {
+    //           if (val.name.includes(search.value)) {
+    //             total++;
+    //             if (total >= ((pagination.value.current - 1) * pagination.value.perPage)
+    //               && (total < (pagination.value.current * pagination.value.perPage))) {
+    //                 return true;
+    //               }
+    //             }
               
-              return false;
-            });
-      pagination.value.total = Math.ceil(total / pagination.value.perPage);
-      return results;
-    } else {
+    //           return false;
+    //         });
+    //   pagination.value.total = Math.ceil(total / pagination.value.perPage);
+    //   return results;
+    // } else {
       pagination.value.total = Math.ceil(store.state.boards.length / pagination.value.perPage);
       return store.state.boards.filter(
             (val, key) => 
               (key >= ((pagination.value.current - 1) * pagination.value.perPage))
               && (key < (pagination.value.current * pagination.value.perPage)));
-    }
+    // }
   }
 
   function editBoardForm(id) {
@@ -131,6 +131,11 @@
   }
 
   onMounted(async () => {
+    if (!store.getters.useLocalStorage) {
+        localStorage.removeItem('boards')
+        store.state.boards = [];
+    }
+
     await apiBoards.getAll();
     showBoards.value = filterBoardsToShow();
   })
@@ -145,18 +150,18 @@
     () => pagination.value.total = Math.ceil(store.state.boards.length / perPage)
   )
 
-  watch(
-    () => search.value,
-    () => {
-      if (timeout.value) {
-        clearTimeout(timeout.value);
-      }
+  // watch(
+  //   () => search.value,
+  //   () => {
+  //     if (timeout.value) {
+  //       clearTimeout(timeout.value);
+  //     }
 
-      timeout.value = setTimeout(() => {
-        search.value = search.value.toLowerCase();
-        pagination.value.current = 1;
-        showBoards.value = filterBoardsToShow();
-      }, 300);
-    }
-  )
+  //     timeout.value = setTimeout(() => {
+  //       search.value = search.value.toLowerCase();
+  //       pagination.value.current = 1;
+  //       showBoards.value = filterBoardsToShow();
+  //     }, 300);
+  //   }
+  // )
 </script>

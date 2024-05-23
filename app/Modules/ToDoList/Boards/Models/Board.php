@@ -22,6 +22,6 @@ class Board extends Model
 
     public function catalogs(): HasMany
     {
-        return $this->hasMany(Catalog::class);
+        return $this->hasMany(Catalog::class)->orderBy('position');
     }
 }
