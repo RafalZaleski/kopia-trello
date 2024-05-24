@@ -26,7 +26,10 @@ class Catalog extends Model
 
     public function tasks(): HasMany
     {
-        return $this->hasMany(Task::class)->orderBy('position');
+        return $this->hasMany(Task::class)
+            ->with('comments')
+            ->with('media')
+            ->orderBy('position');
     }
 
     public function board(): BelongsTo

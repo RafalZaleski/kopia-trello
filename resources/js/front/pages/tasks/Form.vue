@@ -24,11 +24,19 @@
           v-model="form.place"
           label="miejsce"
         ></v-text-field>
-        <v-text-field
-          v-model="form.position"
-          label="pozycja"
-          :rules="rules"
-        ></v-text-field>
+        <div v-for="comment in form.comments">
+          {{ comment.description }}
+        </div>
+        <v-btn
+          @click="addComment()"
+          :loading="store.getters.isLoading"
+          type="button"
+          color="green"
+        >Dodaj komentarz</v-btn>
+        <div v-for="attachment in form.attachments">
+          <a target="_blank" :href="attachment.original_url">Link</a>
+        </div>
+        <v-file-input v-model="newAttachment" @change="addAttachment()" label="Dodaj załącznik"></v-file-input>
         <v-btn
           :loading="store.getters.isLoading"
           type="submit"
@@ -55,8 +63,9 @@
     });
     const emit = defineEmits(["modal-close"]);
   
-    const form = ref({ catalog_id: props.catalogId, name: '', date: null, place: null, position: 0 });
-  
+    const form = ref({ catalog_id: props.catalogId, name: '', date: null, place: null, position: 0, comments: [], attachments: [] });
+    const newAttachment = ref(null);
+
     const rules = [
       value => {
         if (value) return true
@@ -64,6 +73,19 @@
         return 'Wprowadź wartość'
       },
     ];
+
+    function addComment() {
+      console.log('otwieramy form z commentarzem');
+    }
+
+    function addAttachment() {
+      apiTasks.addAttachment(props.taskId, newAttachment.value).then(
+        () => {
+          apiTasks.get(props.taskId, form);
+          newAttachment.value = null;
+        }
+      );
+    }
   
     async function submit () {
       if (props.taskId) {
@@ -96,5 +118,7 @@
     position: fixed;
     left: calc(50% - 180px);
     top: 100px;
+    overflow-y: scroll;
+    max-height: 70%;
   }
 </style>

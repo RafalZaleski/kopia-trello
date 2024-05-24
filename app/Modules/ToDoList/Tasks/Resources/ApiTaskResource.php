@@ -25,6 +25,7 @@ class ApiTaskResource extends JsonResource
             'place' => $this->place,
             'position' => $this->position,
             'comments' => $this->comments,
+            'attachments' => $this->getMedia('task_attachments')->toArray(),
         ];
     }
 }

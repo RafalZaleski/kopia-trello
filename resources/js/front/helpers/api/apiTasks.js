@@ -100,6 +100,28 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
+    async addAttachment(id, file) {
+        this.store.commit('startLoading');
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        await axios.post('/api/tasks/' + id + '/addAttachment', formData, {
+            headers: {
+              'Content-Type': 'multipart/form-data'
+            }
+        })
+        .then((response) => {
+            this.store.state.notify({
+                type: 'success',
+                title: "dodano załącznik",
+            });
+        })
+        .catch((error) => standardErrorApiHandler(error, this.store));
+
+        this.store.commit('stopLoading');
+    }
+
     // async syncUpdated() {
     //     this.store.commit('startLoading');
         

@@ -82,5 +82,7 @@
     position: fixed;
     left: calc(50% - 180px);
     top: 100px;
+    overflow-y: scroll;
+    max-height: 70%;
   }
 </style>

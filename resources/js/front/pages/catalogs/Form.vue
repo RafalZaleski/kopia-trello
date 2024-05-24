@@ -15,11 +15,6 @@
           v-model="form.description"
           label="Opis"
         ></v-textarea>
-        <v-text-field
-          v-model="form.position"
-          label="pozycja"
-          :rules="rules"
-        ></v-text-field>
         <v-btn
           :loading="store.getters.isLoading"
           type="submit"
@@ -89,5 +84,7 @@
     position: fixed;
     left: calc(50% - 180px);
     top: 100px;
+    overflow-y: scroll;
+    max-height: 70%;
   }
 </style>

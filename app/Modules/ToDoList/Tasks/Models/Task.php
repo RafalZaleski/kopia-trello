@@ -32,7 +32,8 @@ class Task extends Model implements HasMedia
 
     public function comments(): HasMany
     {
-        return $this->hasMany(Comment::class);
+        return $this->hasMany(Comment::class)
+            ->with('media');
     }
 
     public function catalog(): BelongsTo

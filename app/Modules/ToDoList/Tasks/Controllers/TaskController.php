@@ -101,4 +101,14 @@ class TaskController extends Controller
 
         return response()->json(null, 204);
     }
+
+    public function addAttachment(Task $task): JsonResponse
+    {
+        if(request()->hasFile('file') && request()->file('file')->isValid()){
+            $task->addMediaFromRequest('file')->toMediaCollection('task_attachments');
+            return response()->json(null, 204);
+        }
+
+        return response()->json(null, 500);
+    }
 }

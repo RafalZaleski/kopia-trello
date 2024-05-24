@@ -31,6 +31,7 @@ Route::get('/get-tasks-all', [TaskController::class, 'indexAll']);
 Route::get('/tasks/sync-updated', [TaskController::class, 'syncUpdated']);
 Route::get('/tasks/sync-deleted', [TaskController::class, 'syncDeleted']);
 Route::resource('tasks', TaskController::class)->except(['create', 'edit']);
+Route::post('tasks/{task}/addAttachment', [TaskController::class, 'addAttachment']);
 
 Route::get('/get-comments-all', [CommentController::class, 'indexAll']);
 Route::get('/comments/sync-updated', [CommentController::class, 'syncUpdated']);
