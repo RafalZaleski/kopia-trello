@@ -16,6 +16,8 @@ export default createStore({
       catalogsSyncDate: localStorage.getItem('catalogsSyncDate') ?? null,
       tasks: JSON.parse(localStorage.getItem('tasks')) ?? [],
       tasksSyncDate: localStorage.getItem('tasksSyncDate') ?? null,
+      comments: JSON.parse(localStorage.getItem('comments')) ?? [],
+      commentsSyncDate: localStorage.getItem('commentsSyncDate') ?? null,
     }
   },
   getters: {
@@ -37,10 +39,14 @@ export default createStore({
       localStorage.removeItem('catalogsSyncDate')
       localStorage.removeItem('tasks')
       localStorage.removeItem('tasksSyncDate')
+      localStorage.removeItem('comments')
+      localStorage.removeItem('commentsSyncDate')
       state.useLocalStorage = false,
       state.login = false;
       state.tasks = [];
       state.tasksSyncDate = null;
+      state.comments = [];
+      state.commentsSyncDate = null;
       state.boards = [];
       state.boardsSyncDate = null;
       state.catalogs = [];

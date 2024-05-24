@@ -19,6 +19,7 @@ class ApiCommentResource extends JsonResource
         return [
             'id' => $this->id,
             'description' => $this->description,
+            'attachments' => $this->getMedia('comment_attachments')->toArray(),
         ];
     }
 }

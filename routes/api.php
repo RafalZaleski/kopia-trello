@@ -31,10 +31,12 @@ Route::get('/get-tasks-all', [TaskController::class, 'indexAll']);
 Route::get('/tasks/sync-updated', [TaskController::class, 'syncUpdated']);
 Route::get('/tasks/sync-deleted', [TaskController::class, 'syncDeleted']);
 Route::resource('tasks', TaskController::class)->except(['create', 'edit']);
-Route::post('tasks/{task}/addAttachment', [TaskController::class, 'addAttachment']);
+Route::post('/tasks/{task}/addAttachment', [TaskController::class, 'addAttachment']);
+Route::delete('/tasks/{task}/deleteAttachment/{id}', [TaskController::class, 'removeAttachment']);
 
 Route::get('/get-comments-all', [CommentController::class, 'indexAll']);
 Route::get('/comments/sync-updated', [CommentController::class, 'syncUpdated']);
 Route::get('/comments/sync-deleted', [CommentController::class, 'syncDeleted']);
 Route::resource('comments', CommentController::class)->except(['create', 'edit']);
-
+Route::post('/comments/{comment}/addAttachment', [CommentController::class, 'addAttachment']);
+Route::delete('/comments/{comment}/deleteAttachment/{id}', [CommentController::class, 'removeAttachment']);

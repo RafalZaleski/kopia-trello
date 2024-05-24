@@ -1,7 +1,7 @@
 import axios from 'axios';
 import { standardErrorApiHandler } from '../standardErrorApiHandler.js';
 
-export class Tasks {
+export class Comments {
     constructor(store) {
         this.store = store;
     }
@@ -9,22 +9,22 @@ export class Tasks {
     async getAll() {
         this.store.commit('startLoading');
 
-        if (this.store.state.tasks.length === 0) {
-            await axios.get('/api/get-tasks-all')
+        if (this.store.state.comments.length === 0) {
+            await axios.get('/api/get-comments-all')
             .then((response) => {
-                this.store.commit('syncItems', { name: 'tasks', payload: response.data.data });
+                this.store.commit('syncItems', { name: 'comments', payload: response.data.data });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
         }
         this.store.commit('stopLoading');
     }
 
-    async getAllPaginate(tasks, pagination) {
+    async getAllPaginate(comments, pagination) {
         this.store.commit('startLoading');
 
-        await axios.get('/api/tasks?page=' + pagination.value.current)
+        await axios.get('/api/comments?page=' + pagination.value.current)
             .then((response) => {
-                tasks.value = response.data.data
+                comments.value = response.data.data
                 pagination.value.current = response.data.meta.current_page;
                 pagination.value.total = response.data.meta.last_page;
             })
@@ -36,11 +36,11 @@ export class Tasks {
     async get(id, form) {
         this.store.commit('startLoading');
 
-        const task = this.store.state.tasks.find((elem) => elem.id == id);
-        if (task) {
-            form.value = {...task};
+        const comment = this.store.state.comments.find((elem) => elem.id == id);
+        if (comment) {
+            form.value = {...comment};
         } else {
-            await axios.get('/api/tasks/' + id)
+            await axios.get('/api/comments/' + id)
                 .then((response) => {
                     form.value = { ...response.data.data };
                 })
@@ -53,9 +53,9 @@ export class Tasks {
     async add(form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks', form.value)
+        await axios.post('/api/comments', form.value)
             .then((response) => {
-                this.store.commit('addItemIn', { name: 'tasks', payload: response.data.data });
+                this.store.commit('addItemIn', { name: 'comments', payload: response.data.data });
                 form.value = { ...response.data.data };
                 this.store.state.notify({
                     type: 'success',
@@ -70,9 +70,9 @@ export class Tasks {
     async edit(id, form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + id, { ...form.value, _method: 'patch'})
+        await axios.post('/api/comments/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
-            this.store.commit('editItemIn', { name: 'tasks', payload: response.data.data });
+            this.store.commit('editItemIn', { name: 'comments', payload: response.data.data });
             form.value = { ...response.data.data };
             this.store.state.notify({
                 type: 'success',
@@ -87,9 +87,9 @@ export class Tasks {
     async delete(id) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + id, { _method: 'delete'})
+        await axios.post('/api/comments/' + id, { _method: 'delete'})
         .then((response) => {
-            this.store.commit('deleteItemIn', { name: 'tasks', payload: id });
+            this.store.commit('deleteItemIn', { name: 'comments', payload: id });
             this.store.state.notify({
                 type: 'success',
                 title: "Usunięto produkt",
@@ -106,7 +106,7 @@ export class Tasks {
         const formData = new FormData();
         formData.append('file', file);
 
-        await axios.post('/api/tasks/' + id + '/addAttachment', formData, {
+        await axios.post('/api/comments/' + id + '/addAttachment', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
@@ -122,10 +122,10 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
-    async deleteAttachment(id, taskId) {
+    async deleteAttachment(id, commentId) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + taskId + '/deleteAttachment/' + id, { _method: 'delete'})
+        await axios.post('/api/comments/' + commentId + '/deleteAttachment/' + id, { _method: 'delete'})
         .then((response) => {
             this.store.state.notify({
                 type: 'success',
@@ -140,9 +140,9 @@ export class Tasks {
     // async syncUpdated() {
     //     this.store.commit('startLoading');
         
-    //     await axios.get('/api/tasks/sync-updated?date=' + (this.store.state.tasksSyncDate ?? 0))
+    //     await axios.get('/api/comments/sync-updated?date=' + (this.store.state.commentsSyncDate ?? 0))
     //     .then((response) => {
-    //         this.store.commit('syncItems', { name: 'tasks', payload: response.data.data });
+    //         this.store.commit('syncItems', { name: 'comments', payload: response.data.data });
     //     })
     //     .catch((error) => standardErrorApiHandler(error, this.store));
 
@@ -152,9 +152,9 @@ export class Tasks {
     // async syncDeleted() {
     //     this.store.commit('startLoading');
         
-    //     await axios.get('/api/tasks/sync-deleted?date=' + (this.store.state.tasksSyncDate ?? 0))
+    //     await axios.get('/api/comments/sync-deleted?date=' + (this.store.state.commentsSyncDate ?? 0))
     //     .then((response) => {
-    //         this.store.commit('syncDelete', { name: 'tasks', payload: response.data.data });
+    //         this.store.commit('syncDelete', { name: 'comments', payload: response.data.data });
     //     })
     //     .catch((error) => standardErrorApiHandler(error, this.store));
 

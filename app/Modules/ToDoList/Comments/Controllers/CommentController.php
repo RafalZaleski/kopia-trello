@@ -19,7 +19,7 @@ class CommentController extends Controller
     public function syncUpdated(SyncRequest $request): AnonymousResourceCollection
     {
         return ApiCommentResource::collection(
-            Comment::select(['id', 'name'])
+            Comment::select(['id', 'description'])
                 ->where('updated_at', '>=', Carbon::createFromTimestamp($request->get('date')))
                 ->get()
         );
@@ -28,7 +28,7 @@ class CommentController extends Controller
     public function syncDeleted(SyncRequest $request): AnonymousResourceCollection
     {
         return ApiCommentResource::collection(
-            Comment::select(['id', 'name'])
+            Comment::select(['id', 'description'])
                 ->where('deleted_at', '>=', Carbon::createFromTimestamp($request->get('date')))
                 ->onlyTrashed()
                 ->get()
@@ -37,12 +37,12 @@ class CommentController extends Controller
 
     public function indexAll(): AnonymousResourceCollection
     {
-        return ApiCommentResource::collection(Comment::select(['id', 'name'])->get());
+        return ApiCommentResource::collection(Comment::select(['id', 'description'])->get());
     }
 
     public function index(): AnonymousResourceCollection
     {
-        $comments = Comment::select(['id', 'name'])->paginate();
+        $comments = Comment::select(['id', 'description'])->paginate();
 
         return ApiCommentResource::collection($comments);
     }
@@ -50,7 +50,7 @@ class CommentController extends Controller
     public function store(StoreCommentRequest $request): ApiCommentResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
+        $data['description'] = mb_strtolower(trim($data['description']));
 
         return new ApiCommentResource(Comment::create($data));
     }
@@ -63,7 +63,7 @@ class CommentController extends Controller
     public function update(UpdateCommentRequest $request, Comment $comment): ApiCommentResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
+        $data['description'] = mb_strtolower(trim($data['description']));
         
         $comment->update($data);
 
@@ -74,6 +74,22 @@ class CommentController extends Controller
     {
         $comment->delete();
 
+        return response()->json(null, 204);
+    }
+
+    public function addAttachment(Comment $comment): JsonResponse
+    {
+        if(request()->hasFile('file') && request()->file('file')->isValid()){
+            $comment->addMediaFromRequest('file')->toMediaCollection('comment_attachments');
+            return response()->json(null, 204);
+        }
+
+        return response()->json(null, 500);
+    }
+
+    public function removeAttachment(Comment $comment, int $id): JsonResponse
+    {
+        $comment->deleteMedia($id);
         return response()->json(null, 204);
     }
 }

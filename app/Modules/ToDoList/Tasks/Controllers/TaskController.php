@@ -111,4 +111,10 @@ class TaskController extends Controller
 
         return response()->json(null, 500);
     }
+
+    public function removeAttachment(Task $task, int $id): JsonResponse
+    {
+        $task->deleteMedia($id);
+        return response()->json(null, 204);
+    }
 }

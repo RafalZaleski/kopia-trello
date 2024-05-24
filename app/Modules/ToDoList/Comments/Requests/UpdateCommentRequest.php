@@ -22,7 +22,6 @@ class UpdateCommentRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'task_id' => ['required', 'gt:0'],
             'description' => ['required', 'min:1', 'max:65536'],
         ];
     }
