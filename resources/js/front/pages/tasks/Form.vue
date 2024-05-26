@@ -1,8 +1,8 @@
 <template>
   <div v-if="isOpen">
-    <div class="cover" @click="emit('modal-close')"></div>
+    <div class="cover" @click="removeEverythingAndEmitClose()"></div>
     <v-sheet class="sheet">
-      <div v-if="props.taskId">Edytuj zadanie</div>
+      <div v-if="!isNew">Edytuj zadanie</div>
       <div v-else>Dodaj zadanie</div>
       <v-form @submit.prevent="submit">
         <v-text-field
@@ -45,7 +45,7 @@
             <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
           </v-btn>
         </div>
-        <v-btn v-if="props.taskId"
+        <v-btn v-if="taskId"
           @click="setCommentId(0)"
           :loading="store.getters.isLoading"
           type="button"
@@ -64,7 +64,7 @@
           </v-btn>
         </div>
         <v-file-input
-          v-if="props.taskId"
+          v-if="taskId"
           v-model="newAttachment"
           @change="addAttachment()"
           label="Dodaj załącznik"
@@ -74,9 +74,15 @@
           type="submit"
           color="green"
         >Zapisz</v-btn>
+        <v-btn
+          @click="removeEverythingAndEmitClose()"
+          :loading="store.getters.isLoading"
+          type="button"
+          color="red"
+        >Anuluj</v-btn>
       </v-form>
     </v-sheet>
-    <CommentForm v-if="commentId !== false" :taskId="props.taskId" :commentId="commentId" :isOpen="isCommentModalOpened" @modal-close="closeCommentModal()"></CommentForm>
+    <CommentForm v-if="commentId !== false" :taskId="taskId" :commentId="commentId" :isOpen="isCommentModalOpened" @modal-close="closeCommentModal()"></CommentForm>
   </div>
 </template>
   
@@ -101,6 +107,8 @@
 
     const commentId = ref(false);
     const isCommentModalOpened = ref(false);
+    const isNew = ref(false)
+    const taskId = ref(false)
   
     const form = ref(
       {
@@ -132,7 +140,13 @@
     const closeCommentModal = async () => {
       isCommentModalOpened.value = false;
       commentId.value = false;
-      apiTasks.get(props.taskId, form);
+
+      const tmpForm = { value: {} };
+      apiTasks.get(taskId.value, tmpForm).then(
+        () => {
+          form.value.comments = { ...tmpForm.value.comments };
+        }
+      );
     };
 
     function setCommentId(id) {
@@ -141,39 +155,71 @@
     }
 
     async function deleteCommentFromList(id) {
-      await apiComments.delete(id)
-
-      apiTasks.get(props.taskId, form);
+      await apiComments.delete(id).then(
+        () => {
+          const tmpForm = { value: {} };
+          apiTasks.get(taskId.value, tmpForm).then(
+            () => {
+              form.value.comments = { ...tmpForm.value.comments };
+            }
+          );
+        }
+      )
     }
 
     function deleteAttachment(id) {
-      apiTasks.deleteAttachment(id, props.taskId).then(
+      apiTasks.deleteAttachment(id, taskId.value).then(
         () => {
-          apiTasks.get(props.taskId, form);
+          const tmpForm = { value: {} };
+          apiTasks.get(taskId.value, tmpForm).then(
+            () => {
+              form.value.attachments = { ...tmpForm.value.attachments };
+            }
+          );
         }
       );
     }
 
     function addAttachment() {
-      apiTasks.addAttachment(props.taskId, newAttachment.value).then(
+      apiTasks.addAttachment(taskId.value, newAttachment.value).then(
         () => {
-          apiTasks.get(props.taskId, form);
           newAttachment.value = null;
+          const tmpForm = { value: {} };
+          apiTasks.get(taskId.value, tmpForm).then(
+            () => {
+              form.value.attachments = { ...tmpForm.value.attachments };
+            }
+          );
         }
       );
     }
   
     async function submit () {
-      if (props.taskId) {
-          await apiTasks.edit(props.taskId, form);
-      } else {
-          await apiTasks.add(form);
+      await apiTasks.edit(taskId.value, form);
+
+      emit('modal-close');
+    }
+
+    async function removeEverythingAndEmitClose() {
+      if (isNew.value) {
+          await apiTasks.delete(taskId.value);
       }
+
       emit('modal-close');
     }
 
     if (props.taskId) {
-      apiTasks.get(props.taskId, form);
+      taskId.value = props.taskId;
+      apiTasks.get(taskId.value, form);
+    } else {
+      isNew.value = true;
+      form.value.name = '######';
+      apiTasks.add(form).then(
+        () => {
+          form.value.name = '';
+          taskId.value = form.value.id;
+        }
+      );
     }
 
 </script>

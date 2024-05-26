@@ -50,11 +50,10 @@ class TaskController extends Controller
     public function store(StoreTaskRequest $request): ApiTaskResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
 
-        $data['positions'] = Task::select('position')
+        $data['position'] = Task::select('position')
             ->where('catalog_id', $data['catalog_id'])
-            ->max('position');
+            ->max('position') + 1;
 
         return new ApiTaskResource(Task::create($data));
     }
@@ -67,12 +66,12 @@ class TaskController extends Controller
     public function update(UpdateTaskRequest $request, Task $task): ApiTaskResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
 
         if ($data['catalog_id'] == $task->catalog_id) {
             if ($data['position'] < $task->position) {
                 Task::where('catalog_id', $data['catalog_id'])
                     ->where('position', '>=', $data['position'])
+                    ->where('position', '<', $task->position)
                     ->increment('position');
             } else {
                 Task::where('catalog_id', $data['catalog_id'])
@@ -97,7 +96,14 @@ class TaskController extends Controller
 
     public function destroy(Task $task): JsonResponse
     {
+        $catalogId = $task->catalog_id;
+        $position = $task->position;
+
         $task->delete();
+
+        Task::where('catalog_id', $catalogId)
+            ->where('position', '>', $position)
+            ->decrement('position');
 
         return response()->json(null, 204);
     }

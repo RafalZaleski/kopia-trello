@@ -30,6 +30,21 @@ class Task extends Model implements HasMedia
         'position',
     ];
 
+    public static function boot ()
+    {
+        parent::boot();
+
+        self::deleting(function (self $task) {
+            foreach ($task->comments as $comment) {
+                $comment->delete();
+            }
+            
+            foreach ($task->getMedia('task_attachments') as $media) {
+                $media->delete();
+            }
+        });
+    }
+
     public function comments(): HasMany
     {
         return $this->hasMany(Comment::class)

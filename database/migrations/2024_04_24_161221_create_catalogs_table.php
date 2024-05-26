@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('catalogs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('board_id');
+            $table->foreignId('board_id')->constrained()->cascadeOnDelete();
             $table->string('name');
             $table->text('description')->nullable();
             $table->unsignedInteger('position');

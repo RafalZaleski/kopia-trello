@@ -55,11 +55,10 @@ class CatalogController extends Controller
     public function store(StoreCatalogRequest $request): ApiCatalogResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
         
-        $data['positions'] = Catalog::select('position')
+        $data['position'] = Catalog::select('position')
             ->where('board_id', $data['board_id'])
-            ->max('position');
+            ->max('position') + 1;
 
         return new ApiCatalogResource(Catalog::create($data));
     }
@@ -72,11 +71,11 @@ class CatalogController extends Controller
     public function update(UpdateCatalogRequest $request, Catalog $catalog): ApiCatalogResource
     {
         $data = $request->validated();
-        $data['name'] = mb_strtolower(trim($data['name']));
 
         if ($data['position'] < $catalog->position) {
             Catalog::where('board_id', $catalog->board_id)
                 ->where('position', '>=', $data['position'])
+                ->where('position', '<', $catalog->position)
                 ->increment('position');
         } else {
             Catalog::where('board_id', $catalog->board_id)
@@ -92,7 +91,14 @@ class CatalogController extends Controller
 
     public function destroy(Catalog $catalog): JsonResponse
     {
+        $boardId = $catalog->board_id;
+        $position = $catalog->position;
+
         $catalog->delete();
+
+        Catalog::where('board_id', $boardId)
+            ->where('position', '>', $position)
+            ->decrement('position');
 
         return response()->json(null, 204);
     }

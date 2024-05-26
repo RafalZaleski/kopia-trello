@@ -323,13 +323,17 @@
     display: flex;
     gap: 20px;
     margin: 20px;
-    border: 1px solid #000;
+    /* border: 1px solid #000; */
+    max-height: 60vh;
+    overflow-x: auto;
   }
 
   .catalog {
     border: 1px solid #000;
-    width: 270px;
+    min-width: 300px;
     padding: 20px;
+    max-height: 100%;
+    overflow-y: auto;
   }
 
   .catalog_description {

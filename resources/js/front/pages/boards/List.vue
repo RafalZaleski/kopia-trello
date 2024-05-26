@@ -32,15 +32,15 @@
           <td><router-link :to="{ name: 'catalogs', params: { id: board.id } }">{{ board.name }}</router-link></td>
           <td>{{ board.description }}</td>
           <td>
-              <v-btn
-                :disabled="store.getters.isLoading"
-                @click="editBoardForm(board.id)"
-                color="green"
-                class="ma-1"
-              >
-                <span class="mdi mdi-pencil"></span>
-                <v-tooltip activator="parent" location="top" text="Edytuj"></v-tooltip>
-              </v-btn>
+            <v-btn
+              :disabled="store.getters.isLoading"
+              @click="editBoardForm(board.id)"
+              color="green"
+              class="ma-1"
+            >
+              <span class="mdi mdi-pencil"></span>
+              <v-tooltip activator="parent" location="top" text="Edytuj"></v-tooltip>
+            </v-btn>
             <v-btn 
               :disabled="store.getters.isLoading"
               @click="deleteBoardFromList(board.id)"

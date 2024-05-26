@@ -20,6 +20,12 @@
           type="submit"
           color="green"
         >Zapisz</v-btn>
+        <v-btn
+          @click="emit('modal-close')"
+          :loading="store.getters.isLoading"
+          type="button"
+          color="red"
+        >Anuluj</v-btn>
       </v-form>
     </v-sheet>
   </div>

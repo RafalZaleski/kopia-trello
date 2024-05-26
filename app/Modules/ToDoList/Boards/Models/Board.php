@@ -20,6 +20,17 @@ class Board extends Model
         'description',
     ];
 
+    public static function boot ()
+    {
+        parent::boot();
+
+        self::deleting(function (self $board) {
+            foreach($board->catalogs as $catalog) {
+                $catalog->delete();
+            }
+        });
+    }
+
     public function catalogs(): HasMany
     {
         return $this->hasMany(Catalog::class)

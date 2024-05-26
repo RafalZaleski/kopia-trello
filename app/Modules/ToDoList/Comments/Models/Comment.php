@@ -24,6 +24,17 @@ class Comment extends Model implements HasMedia
         'task_id',
     ];
 
+    public static function boot ()
+    {
+        parent::boot();
+
+        self::deleting(function (self $comment) {
+            foreach ($comment->getMedia('comment_attachments') as $media) {
+                $media->delete();
+            }
+        });
+    }
+
     public function task(): BelongsTo
     {
         return $this->belongsTo(Task::class);

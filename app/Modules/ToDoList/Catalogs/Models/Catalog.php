@@ -24,6 +24,17 @@ class Catalog extends Model
         'position',
     ];
 
+    public static function boot ()
+    {
+        parent::boot();
+
+        self::deleting(function (self $catalog) {
+            foreach($catalog->tasks as $task) {
+                $task->delete();
+            }
+        });
+    }
+
     public function tasks(): HasMany
     {
         return $this->hasMany(Task::class)

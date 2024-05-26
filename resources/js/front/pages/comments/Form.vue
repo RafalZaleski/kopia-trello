@@ -1,10 +1,10 @@
 <template>
     <div v-if="isOpen">
-        <div class="cover" @click="emit('modal-close')"></div>
+        <div class="cover" @click="removeEverythingAndEmitClose()"></div>
         <v-sheet class="sheet">
-            <div v-if="props.commentId">Edytuj komentarz</div>
+            <div v-if="!isNew">Edytuj komentarz</div>
             <div v-else>Dodaj komentarz</div>
-            <v-form @submit.prevent="submit">
+            <v-form @submit.prevent="submit()">
                 <v-textarea
                     v-model="form.description"
                     :rules="rules"
@@ -22,12 +22,18 @@
                     <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
                 </v-btn>
                 </div>
-                <v-file-input v-if="props.commentId" v-model="newAttachment" @change="addAttachment()" label="Dodaj załącznik"></v-file-input>
+                <v-file-input v-if="commentId" v-model="newAttachment" @change="addAttachment()" label="Dodaj załącznik"></v-file-input>
                 <v-btn
                     :loading="store.getters.isLoading"
                     type="submit"
                     color="green"
                     >Zapisz</v-btn>
+                <v-btn
+                    @click="removeEverythingAndEmitClose()"
+                    :loading="store.getters.isLoading"
+                    type="button"
+                    color="red"
+                    >Anuluj</v-btn>
             </v-form>
         </v-sheet>
     </div>
@@ -51,6 +57,8 @@
     
     const form = ref({ task_id: props.taskId, description: '', attachments: [] });
     const newAttachment = ref(null);
+    const commentId = ref(null);
+    const isNew = ref(false);
 
     const rules = [
         value => {
@@ -61,33 +69,58 @@
     ];
 
     function addAttachment() {
-        apiComments.addAttachment(props.commentId, newAttachment.value).then(
+        apiComments.addAttachment(commentId.value, newAttachment.value).then(
             () => {
-                apiComments.get(props.commentId, form);
                 newAttachment.value = null;
+                const tmpForm = { value: {} };
+                apiComments.get(commentId.value, tmpForm).then(
+                    () => {
+                        form.value.attachments = { ...tmpForm.value.attachments };
+                    }
+                );
             }
         );
     }
 
     function deleteAttachment(id) {
-        apiComments.deleteAttachment(id, props.commentId).then(
+        apiComments.deleteAttachment(id, commentId.value).then(
             () => {
-                apiComments.get(props.commentId, form);
+                const tmpForm = { value: {} };
+                apiComments.get(commentId.value, tmpForm).then(
+                    () => {
+                        form.value.attachments = { ...tmpForm.value.attachments };
+                    }
+                );
             }
         );
     }
     
     async function submit () {
-        if (props.commentId) {
-            await apiComments.edit(props.commentId, form);
-        } else {
-            await apiComments.add(form);
-        }
+        await apiComments.edit(commentId.value, form);
+        
         emit('modal-close');
     }
 
-    if (props.commentId) {
-        apiComments.get(props.commentId, form);
+    async function removeEverythingAndEmitClose() {
+      if (isNew.value) {
+          await apiComments.delete(commentId.value);
+      }
+
+      emit('modal-close');
+    }
+
+    if (props.commentId > 0) {
+        commentId.value = props.commentId;
+        apiComments.get(commentId.value, form);
+    } else {
+      isNew.value = true;
+      form.value.description = '######';
+      apiComments.add(form).then(
+        () => {
+          form.value.description = '';
+          commentId.value = form.value.id;
+        }
+      );
     }
 
 </script>
