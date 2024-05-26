@@ -37,7 +37,7 @@ class BoardController extends Controller
 
     public function indexAll(): AnonymousResourceCollection
     {
-        return ApiBoardResource::collection(Board::select(['id', 'name'])
+        return ApiBoardResource::collection(Board::select(['id', 'name', 'description'])
             ->with('catalogs')
             ->get()
         );
@@ -45,7 +45,7 @@ class BoardController extends Controller
 
     public function index(): AnonymousResourceCollection
     {
-        $boards = Board::select(['id', 'name'])->paginate();
+        $boards = Board::select(['id', 'name', 'description'])->paginate();
 
         return ApiBoardResource::collection($boards);
     }

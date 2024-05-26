@@ -75,11 +75,11 @@ class CatalogController extends Controller
         $data['name'] = mb_strtolower(trim($data['name']));
 
         if ($data['position'] < $catalog->position) {
-            Catalog::where('board_id', $data['board_id'])
+            Catalog::where('board_id', $catalog->board_id)
                 ->where('position', '>=', $data['position'])
                 ->increment('position');
         } else {
-            Catalog::where('board_id', $data['board_id'])
+            Catalog::where('board_id', $catalog->board_id)
                 ->where('position', '<=', $data['position'])
                 ->where('position', '>', $catalog->position)
                 ->decrement('position');

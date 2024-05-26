@@ -9,13 +9,13 @@ export class Boards {
     async getAll() {
         this.store.commit('startLoading');
 
-        if (this.store.state.boards.length === 0) {
+        // if (this.store.state.boards.length === 0) {
             await axios.get('/api/get-boards-all')
             .then((response) => {
                 this.store.commit('syncItems', { name: 'boards', payload: response.data.data });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
-        }
+        // }
         this.store.commit('stopLoading');
     }
 

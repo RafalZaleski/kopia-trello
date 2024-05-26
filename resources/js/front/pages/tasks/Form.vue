@@ -52,7 +52,6 @@
           color="green"
         >Dodaj komentarz</v-btn>
         <div v-for="attachment in form.attachments">
-          <!-- dodać usuwanie załącznika -->
           <a target="_blank" :href="attachment.original_url">Link</a>
           <v-btn 
             :disabled="store.getters.isLoading"
@@ -103,7 +102,19 @@
     const commentId = ref(false);
     const isCommentModalOpened = ref(false);
   
-    const form = ref({ catalog_id: props.catalogId, name: '', description: null, date: null, place: null, position: 0, comments: [], attachments: [] });
+    const form = ref(
+      {
+        catalog_id: props.catalogId,
+        name: '',
+        description: null,
+        date: null,
+        place: null,
+        position: 0,
+        comments: [],
+        attachments: []
+      }
+    );
+    
     const newAttachment = ref(null);
 
     const rules = [

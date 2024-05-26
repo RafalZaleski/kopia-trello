@@ -36,16 +36,16 @@ export class Tasks {
     async get(id, form) {
         this.store.commit('startLoading');
 
-        const task = this.store.state.tasks.find((elem) => elem.id == id);
-        if (task) {
-            form.value = {...task};
-        } else {
+        // const task = this.store.state.tasks.find((elem) => elem.id == id);
+        // if (task) {
+        //     form.value = {...task};
+        // } else {
             await axios.get('/api/tasks/' + id)
                 .then((response) => {
                     form.value = { ...response.data.data };
                 })
                 .catch((error) => standardErrorApiHandler(error, this.store));
-        }
+        // }
 
         this.store.commit('stopLoading');
     }

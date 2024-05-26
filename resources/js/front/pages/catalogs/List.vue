@@ -67,6 +67,15 @@
           class="task"
         >
           <div class="task_name" @click="setTaskId(catalog.id, task.id)">{{ task.name }}</div>
+          <v-btn 
+            :disabled="store.getters.isLoading"
+            @click="deleteTaskFromList(task.id)"
+            color="red"
+            class="ma-1"
+          >
+            <span class="mdi mdi-delete"></span>
+            <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
+          </v-btn>
         </div>
       </div>
     </div>
@@ -85,17 +94,19 @@
 
   import { ref, onMounted, watch } from 'vue';
   import { useStore } from 'vuex';
+  import { Boards } from '../../helpers/api/apiBoards';
   import { Catalogs } from '../../helpers/api/apiCatalogs';
   import Form from './Form.vue';
   import TaskForm from '../tasks/Form.vue';
   import { Tasks } from '../../helpers/api/apiTasks';
 
   const store = useStore();
+  const apiBoards = new Boards(store);
   const apiCatalogs = new Catalogs(store);
   const apiTasks = new Tasks(store);
 
-  const perPage = 10;
-  const pagination = ref({current: 1, total: Math.ceil(store.state.tasks.length / perPage), perPage: perPage});
+  // const perPage = 10;
+  // const pagination = ref({current: 1, total: Math.ceil(store.state.tasks.length / perPage), perPage: perPage});
   const showCatalogs = ref([]);
   const catalogId = ref(false);
   const taskId = ref(false);
@@ -103,31 +114,18 @@
   const dropArea = ref(false);
 
   const isModalOpened = ref(false);
-  const isTaskModalOpened = ref(false);
+
   const openModal = () => {
     isModalOpened.value = true;
   };
-  const openTaskModal = () => {
-    isTaskModalOpened.value = true;
-  };
+
   const closeModal = () => {
     isModalOpened.value = false;
     catalogId.value = false;
-    showCatalogs.value = filterCatalogsToShow();
+    filterCatalogsToShow();
   };
 
-  const closeTaskModal = async () => {
-    isTaskModalOpened.value = false;
-    taskId.value = false;
-    catalogId.value = false;
-    // if (!store.getters.useLocalStorage) {
-    //     localStorage.removeItem('catalogs')
-    //     store.state.catalogs = [];
-    // }
-
-    // await apiCatalogs.getAll();
-    showCatalogs.value = filterCatalogsToShow();
-  };
+  const isTaskModalOpened = ref(false);
 
   function setTaskId(catalog_id, id) {
     catalogId.value = catalog_id;
@@ -135,22 +133,44 @@
     openTaskModal();
   }
 
+  const openTaskModal = () => {
+    isTaskModalOpened.value = true;
+  };
+
+  const closeTaskModal = async () => {
+    isTaskModalOpened.value = false;
+    taskId.value = false;
+    catalogId.value = false;
+    filterCatalogsToShow();
+  };
+
   async function deleteCatalogFromList(id) {
     await apiCatalogs.delete(id)
-    if (showCatalogs.value.length === 1) {
-      pagination.value.current = pagination.value.current - 1;
-    }
+    // if (showCatalogs.value.length === 1) {
+    //   pagination.value.current = pagination.value.current - 1;
+    // }
 
-    showCatalogs.value = filterCatalogsToShow();
+    filterCatalogsToShow();
   }
 
-  function filterCatalogsToShow() {
-    const results = store.state.boards.find((elem) => elem.id == store.state.route.params.id).catalogs;
-    pagination.value.total = Math.ceil(results.length / pagination.value.perPage);
-    return results.filter(
-          (val, key) => 
-            (key >= ((pagination.value.current - 1) * pagination.value.perPage))
-            && (key < (pagination.value.current * pagination.value.perPage)));
+  async function deleteTaskFromList(id) {
+    await apiTasks.delete(id)
+    
+    filterCatalogsToShow();
+  }
+
+  async function filterCatalogsToShow() {
+    await apiBoards.getAll().then(
+      () => {
+        showCatalogs.value = store.state.boards.find((elem) => elem.id == store.state.route.params.id).catalogs;
+      }
+    );
+    
+    // pagination.value.total = Math.ceil(results.length / pagination.value.perPage);
+    // return results.filter(
+    //       (val, key) => 
+    //         (key >= ((pagination.value.current - 1) * pagination.value.perPage))
+    //         && (key < (pagination.value.current * pagination.value.perPage)));
   }
 
   function editCatalogForm(id) {
@@ -164,19 +184,8 @@
         store.state.catalogs = [];
     }
 
-    await apiCatalogs.getAll();
-    showCatalogs.value = filterCatalogsToShow();
+    filterCatalogsToShow();
   })
-
-  watch(
-    () => pagination.value.current,
-    () => showCatalogs.value = filterCatalogsToShow()
-  )
-
-  watch(
-    () => store.state.catalogs.length,
-    () => pagination.value.total = Math.ceil(store.state.catalogs.length / perPage)
-  )
 
   const handleDragStart = (itemData) => {
     if (dragElem.value !== false) {

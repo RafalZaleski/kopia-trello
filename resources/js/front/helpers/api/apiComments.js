@@ -36,16 +36,16 @@ export class Comments {
     async get(id, form) {
         this.store.commit('startLoading');
 
-        const comment = this.store.state.comments.find((elem) => elem.id == id);
-        if (comment) {
-            form.value = {...comment};
-        } else {
+        // const comment = this.store.state.comments.find((elem) => elem.id == id);
+        // if (comment) {
+        //     form.value = {...comment};
+        // } else {
             await axios.get('/api/comments/' + id)
                 .then((response) => {
                     form.value = { ...response.data.data };
                 })
                 .catch((error) => standardErrorApiHandler(error, this.store));
-        }
+        // }
 
         this.store.commit('stopLoading');
     }
