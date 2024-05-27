@@ -17,8 +17,13 @@
       <v-text-field
         v-model="form.date"
         label="termin"
-      ></v-text-field>
-      <!-- <v-date-picker></v-date-picker> -->
+        >
+        <template v-slot:append>
+            <v-btn @click="openDatePicker()">
+              <v-icon icon="mdi-calendar"></v-icon>
+            </v-btn>
+        </template>
+      </v-text-field>
       <v-text-field
         v-model="form.place"
         label="miejsce"
@@ -82,6 +87,23 @@
     </v-form>
   </v-sheet>
   <router-view></router-view>
+  <div class="cover" v-if="showDatePicker" @click="dateTimePickerCancel()"></div>
+  <v-sheet class="sheetDatePicker" v-if="showDatePicker">
+    <v-date-picker v-if="showDatePickerStep1" v-model="dataPicker" :hide-header="true"></v-date-picker>
+    <v-time-picker v-if="showDatePickerStep2" v-model="timePicker" format="24hr" title=""></v-time-picker>
+    <v-btn
+        @click="dateTimePickerNextStep()"
+        :loading="store.getters.isLoading"
+        type="button"
+        color="green"
+      >Dalej</v-btn>
+      <v-btn
+        @click="dateTimePickerCancel()"
+        :loading="store.getters.isLoading"
+        type="button"
+        color="red"
+      >Anuluj</v-btn>
+  </v-sheet>
 </template>
   
 <script setup>
@@ -95,9 +117,15 @@
     const apiComments = new Comments(store);
     const apiTasks = new Tasks(store);
 
-    const isNew = ref(false)
-    const taskId = ref(false)
-  
+    const isNew = ref(false);
+    const taskId = ref(false);
+    const showDatePicker = ref(false);
+    const showDatePickerStep1 = ref(false);
+    const showDatePickerStep2 = ref(false);
+    const dataPicker = ref(false);
+    const timePicker = ref(false);
+    const newAttachment = ref(null);
+    
     const form = ref(
       {
         catalog_id: store.state.route.params.catalogId,
@@ -110,8 +138,6 @@
         attachments: []
       }
     );
-    
-    const newAttachment = ref(null);
 
     const rules = [
       value => {
@@ -120,6 +146,48 @@
         return 'Wprowadź wartość'
       },
     ];
+
+    function openDatePicker() {
+      dataPicker.value = new Date(form.value.date);
+      timePicker.value = dataPicker.value.getHours() + ':' + dataPicker.value.getMinutes();
+      showDatePicker.value = true;
+      showDatePickerStep1.value = true;
+    }
+
+    function dateTimePickerCancel() {
+      showDatePicker.value = false;
+      showDatePickerStep1.value = false;
+      showDatePickerStep2.value = false;
+    }
+
+    function dateTimePickerNextStep() {
+      if (showDatePickerStep1.value) {
+        showDatePickerStep1.value = false;
+        showDatePickerStep2.value = true;
+      } else {
+        setDateTime();
+        dateTimePickerCancel();
+      }
+    }
+
+    function setDateTime() {
+      form.value.date = formatDate(dataPicker.value);
+      form.value.date += ' ' + timePicker.value;
+    }
+
+    function formatDate(date) {
+      let day = date.getDate();
+      if (day < 10) {
+        day = '0' + day;
+      }
+
+      let month = date.getMonth() + 1;
+      if (month < 10) {
+        month = '0' + month;
+      }
+
+      return date.getFullYear() + '-' + month + '-' + day;
+    }
 
     function setCommentId(id) {
       store.state.router.push(
@@ -227,5 +295,14 @@
     top: 100px;
     overflow-y: scroll;
     max-height: 70%;
+  }
+
+  .sheetDatePicker {
+    width: 350px;
+    padding: 20px;
+    position: fixed;
+    left: calc(50% - 200px);
+    top: 100px;
+    max-height: 80%;
   }
 </style>
