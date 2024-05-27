@@ -269,12 +269,27 @@
 
     if (dragElem.value.type === 'task') {
       newPosition -= 6;
-      dragElem.value.position = newPosition;
-      dragElem.value.catalog_id = dragElemParent.id.substring(8);
-      await apiTasks.edit(dragElem.value.id, dragElem);
+      const newCatalogId = dragElemParent.id.substring(8);
+      // if (newPosition != dragElem.value.position || dragElem.value.catalog_id != newCatalogId) {
+        dragElem.value.position = newPosition;
+        dragElem.value.catalog_id = newCatalogId;
+        await apiTasks.edit(dragElem.value.id, dragElem);
+        // .then(
+        //   async () => {
+        //     await filterCatalogsToShow();
+        //   }
+        // );
+      // }
     } else {
-      dragElem.value.position = newPosition;
-      await apiCatalogs.edit(dragElem.value.id, dragElem);
+      // if (newPosition != dragElem.value.position) {
+        dragElem.value.position = newPosition;
+        await apiCatalogs.edit(dragElem.value.id, dragElem);
+        // .then(
+        //   async () => {
+        //     await filterCatalogsToShow();
+        //   }
+        // );
+      // }
     }
 
     dragElem.value = false;

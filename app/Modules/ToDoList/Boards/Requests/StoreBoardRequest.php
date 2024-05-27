@@ -22,8 +22,8 @@ class StoreBoardRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'min:3', 'max:255'],
-            'description' => ['max:65536'],
+            'name' => ['required', 'min:1', 'max:255'],
+            'description' => ['nullable', 'max:65536'],
         ];
     }
 }

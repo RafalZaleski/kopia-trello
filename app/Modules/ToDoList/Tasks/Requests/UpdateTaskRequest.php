@@ -23,10 +23,10 @@ class UpdateTaskRequest extends FormRequest
     {
         return [
             'catalog_id' => ['required', 'gt:0'],
-            'name' => ['required', 'min:3', 'max:255'],
-            'description' => ['max:65536'],
-            'date' => ['date_format:"Y-m-d H:i"'],
-            'place' => [],
+            'name' => ['required', 'min:1', 'max:255'],
+            'description' => ['nullable', 'max:65536'],
+            'date' => ['nullable', 'date_format:"Y-m-d H:i"'],
+            'place' => ['nullable', 'max:255'],
             'position' => ['required', 'gte:0'],
         ];
     }
