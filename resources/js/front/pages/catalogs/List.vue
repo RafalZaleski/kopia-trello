@@ -1,103 +1,100 @@
 <template>
-    <div>Lista katalogów</div>
-    <router-link :to="{ name: 'boards' }">
-      <v-btn 
+  <div>Lista katalogów</div>
+  <router-link :to="{ name: 'boards' }">
+    <v-btn 
+      :disabled="store.getters.isLoading"
+      color="green"
+      class="ma-1"
+    >
+      Wstecz
+    </v-btn>
+  </router-link>
+
+  <div class="board"
+    v-on:dragover.prevent
+    v-on:drop="handleDrop()"
+    v-on:dragenter="handleDrag($event)"
+    >
+    <div
+      v-for="catalog in showCatalogs"
+      :key="catalog.position"
+      :id="'catalog_' + catalog.id"
+      class="catalog"
+      draggable="true"
+      v-on:dragstart="handleDragStart({ ...catalog, type: 'catalog' })"
+      v-on:dragenter="handleDrag($event)"
+      v-on:dragover.prevent
+      v-on:dragover="checkArea($event)"
+      v-on:drop="handleDrop()"
+      >
+      <v-btn
         :disabled="store.getters.isLoading"
+        @click="setTaskId(catalog.id, 0)"
         color="green"
         class="ma-1"
       >
-        Wstecz
+        <span class="mdi mdi-plus"></span>
+        <v-tooltip activator="parent" location="top" text="dodaj zadanie"></v-tooltip>
       </v-btn>
-    </router-link>
-
-    <div class="board"
-      v-on:dragover.prevent
-      v-on:drop="handleDrop()"
-      v-on:dragenter="handleDrag($event)"
+      <v-btn
+        :disabled="store.getters.isLoading"
+        @click="editCatalogForm(catalog.id)"
+        color="green"
+        class="ma-1"
       >
-      <div
-        v-for="catalog in showCatalogs"
-        :key="catalog.position"
-        :id="'catalog_' + catalog.id"
-        class="catalog"
+        <span class="mdi mdi-pencil"></span>
+        <v-tooltip activator="parent" location="top" text="Edytuj"></v-tooltip>
+      </v-btn>
+      <v-btn 
+        :disabled="store.getters.isLoading"
+        @click="deleteCatalogFromList(catalog.id)"
+        color="red"
+        class="ma-1"
+      >
+        <span class="mdi mdi-delete"></span>
+        <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
+      </v-btn>
+      <div class="catalog_name">{{ catalog.name }}</div>
+      <div class="catalog_description">{{ catalog.description }}</div>
+      <br>
+      <div v-for="task in catalog.tasks"
+        :key="task.position"
+        :id="'task_' + task.id"
         draggable="true"
-        v-on:dragstart="handleDragStart({ ...catalog, type: 'catalog' })"
+        v-on:dragstart="handleDragStart({ ...task, type: 'task' })"
         v-on:dragenter="handleDrag($event)"
-        v-on:dragover.prevent
         v-on:dragover="checkArea($event)"
-        v-on:drop="handleDrop()"
-        >
-        <v-btn
-          :disabled="store.getters.isLoading"
-          @click="setTaskId(catalog.id, 0)"
-          color="green"
-          class="ma-1"
-        >
-          <span class="mdi mdi-plus"></span>
-          <v-tooltip activator="parent" location="top" text="dodaj zadanie"></v-tooltip>
-        </v-btn>
-        <v-btn
-          :disabled="store.getters.isLoading"
-          @click="editCatalogForm(catalog.id)"
-          color="green"
-          class="ma-1"
-        >
-          <span class="mdi mdi-pencil"></span>
-          <v-tooltip activator="parent" location="top" text="Edytuj"></v-tooltip>
-        </v-btn>
+        class="task"
+      >
+        <div class="task_name" @click="setTaskId(catalog.id, task.id)">{{ task.name }}</div>
         <v-btn 
           :disabled="store.getters.isLoading"
-          @click="deleteCatalogFromList(catalog.id)"
+          @click="deleteTaskFromList(task.id)"
           color="red"
           class="ma-1"
         >
           <span class="mdi mdi-delete"></span>
           <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
         </v-btn>
-        <div class="catalog_name">{{ catalog.name }}</div>
-        <div class="catalog_description">{{ catalog.description }}</div>
-        <br>
-        <div v-for="task in catalog.tasks"
-          :key="task.position"
-          :id="'task_' + task.id"
-          draggable="true"
-          v-on:dragstart="handleDragStart({ ...task, type: 'task' })"
-          v-on:dragenter="handleDrag($event)"
-          v-on:dragover="checkArea($event)"
-          class="task"
-        >
-          <div class="task_name" @click="setTaskId(catalog.id, task.id)">{{ task.name }}</div>
-          <v-btn 
-            :disabled="store.getters.isLoading"
-            @click="deleteTaskFromList(task.id)"
-            color="red"
-            class="ma-1"
-          >
-            <span class="mdi mdi-delete"></span>
-            <v-tooltip activator="parent" location="top" text="Usuń"></v-tooltip>
-          </v-btn>
-        </div>
       </div>
     </div>
+  </div>
 
-    <v-btn
-      :disabled="store.getters.isLoading"
-      @click="editCatalogForm(0)"
-      color="green"
-      style="position:fixed; bottom: 30px; right: 30px;"
-    >Dodaj katalog</v-btn>
-    <Form v-if="catalogId !== false" :catalogId="catalogId" :isOpen="isModalOpened" @modal-close="closeModal()"></Form>
-    <TaskForm v-if="taskId !== false" :taskId="taskId" :catalogId="catalogId" :isOpen="isTaskModalOpened" @modal-close="closeTaskModal()"></TaskForm>
+  <v-btn
+    :disabled="store.getters.isLoading"
+    @click="editCatalogForm(0)"
+    color="green"
+    style="position:fixed; bottom: 30px; right: 30px;"
+  >Dodaj katalog</v-btn>
+  <router-view></router-view>
 </template>
 
 <script setup>
 
-  import { ref, onMounted, watch } from 'vue';
+  import { ref, onMounted } from 'vue';
   import { useStore } from 'vuex';
   import { Boards } from '../../helpers/api/apiBoards';
   import { Catalogs } from '../../helpers/api/apiCatalogs';
-  import Form from './Form.vue';
-  import TaskForm from '../tasks/Form.vue';
   import { Tasks } from '../../helpers/api/apiTasks';
 
   const store = useStore();
@@ -105,50 +102,25 @@
   const apiCatalogs = new Catalogs(store);
   const apiTasks = new Tasks(store);
 
-  // const perPage = 10;
-  // const pagination = ref({current: 1, total: Math.ceil(store.state.tasks.length / perPage), perPage: perPage});
   const showCatalogs = ref([]);
-  const catalogId = ref(false);
-  const taskId = ref(false);
   const dragElem = ref(false);
   const dropArea = ref(false);
 
-  const isModalOpened = ref(false);
-
-  const openModal = () => {
-    isModalOpened.value = true;
-  };
-
-  const closeModal = () => {
-    isModalOpened.value = false;
-    catalogId.value = false;
-    filterCatalogsToShow();
-  };
-
-  const isTaskModalOpened = ref(false);
-
   function setTaskId(catalog_id, id) {
-    catalogId.value = catalog_id;
-    taskId.value = id;
-    openTaskModal();
+    store.state.router.push(
+      {
+        name: 'taskForm',
+        params: { 
+          id: store.state.route.params.id,
+          catalogId: catalog_id,
+          taskId: id 
+        }
+      }
+    );
   }
-
-  const openTaskModal = () => {
-    isTaskModalOpened.value = true;
-  };
-
-  const closeTaskModal = async () => {
-    isTaskModalOpened.value = false;
-    taskId.value = false;
-    catalogId.value = false;
-    filterCatalogsToShow();
-  };
 
   async function deleteCatalogFromList(id) {
     await apiCatalogs.delete(id)
-    // if (showCatalogs.value.length === 1) {
-    //   pagination.value.current = pagination.value.current - 1;
-    // }
 
     filterCatalogsToShow();
   }
@@ -165,17 +137,10 @@
         showCatalogs.value = store.state.boards.find((elem) => elem.id == store.state.route.params.id).catalogs;
       }
     );
-    
-    // pagination.value.total = Math.ceil(results.length / pagination.value.perPage);
-    // return results.filter(
-    //       (val, key) => 
-    //         (key >= ((pagination.value.current - 1) * pagination.value.perPage))
-    //         && (key < (pagination.value.current * pagination.value.perPage)));
   }
 
   function editCatalogForm(id) {
-    catalogId.value = id;
-    openModal();
+    store.state.router.push({ name: 'catalogForm', params: { id: store.state.route.params.id, catalogId: id } });
   }
 
   onMounted(async () => {
@@ -323,7 +288,6 @@
     display: flex;
     gap: 20px;
     margin: 20px;
-    /* border: 1px solid #000; */
     max-height: 60vh;
     overflow-x: auto;
   }

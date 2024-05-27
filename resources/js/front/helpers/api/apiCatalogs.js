@@ -73,6 +73,11 @@ export class Catalogs {
         await axios.post('/api/catalogs/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
             this.store.commit('editItemIn', { name: 'catalogs', payload: response.data.data });
+           
+            const boardIndex = this.store.state.boards.findIndex((elem) => elem.id == this.store.state.route.params.id);
+            const catalogIndex = this.store.state.boards[boardIndex].catalogs.findIndex((elem) => elem.id == this.store.state.route.params.catalogId);
+            this.store.state.boards[boardIndex].catalogs[catalogIndex] = { ...response.data.data };
+
             form.value = { ...response.data.data };
             this.store.state.notify({
                 type: 'success',

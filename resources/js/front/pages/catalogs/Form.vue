@@ -1,76 +1,73 @@
 <template>
-  <div v-if="isOpen">
-    <div class="cover" @click="emit('modal-close')"></div>
-    <v-sheet class="sheet">
-      <div v-if="props.catalogId">Edytuj katalog</div>
-      <div v-else>Dodaj katalog</div>
-      <v-form @submit.prevent="submit">
-        <v-text-field
-          v-model="form.name"
-          label="Nazwa"
-          :rules="rules"
-          :autofocus="true"
-        ></v-text-field>
-        <v-textarea
-          v-model="form.description"
-          label="Opis"
-        ></v-textarea>
-        <v-btn
-          :loading="store.getters.isLoading"
-          type="submit"
-          color="green"
-        >Zapisz</v-btn>
-        <v-btn
-          @click="emit('modal-close')"
-          :loading="store.getters.isLoading"
-          type="button"
-          color="red"
-        >Anuluj</v-btn>
-      </v-form>
-    </v-sheet>
-  </div>
+  <div class="cover" @click="close()"></div>
+  <v-sheet class="sheet">
+    <div v-if="store.state.route.params.catalogId">Edytuj katalog</div>
+    <div v-else>Dodaj katalog</div>
+    <v-form @submit.prevent="submit()">
+      <v-text-field
+        v-model="form.name"
+        label="Nazwa"
+        :rules="rules"
+        :autofocus="true"
+      ></v-text-field>
+      <v-textarea
+        v-model="form.description"
+        label="Opis"
+      ></v-textarea>
+      <v-btn
+        :loading="store.getters.isLoading"
+        type="submit"
+        color="green"
+      >Zapisz</v-btn>
+      <v-btn
+        @click="close()"
+        :loading="store.getters.isLoading"
+        type="button"
+        color="red"
+      >Anuluj</v-btn>
+    </v-form>
+  </v-sheet>
 </template>
   
 <script setup>
   
-    import { ref } from 'vue';
-    import { useStore } from 'vuex';
-    import { Catalogs } from '../../helpers/api/apiCatalogs';
-      
-    const store = useStore();
-    const apiCatalogs = new Catalogs(store);
+  import { ref } from 'vue';
+  import { useStore } from 'vuex';
+  import { Catalogs } from '../../helpers/api/apiCatalogs';
+    
+  const store = useStore();
+  const apiCatalogs = new Catalogs(store);
 
-    const props = defineProps({
-        isOpen: Boolean,
-        catalogId: Number
-    });
-    const emit = defineEmits(["modal-close"]);
-  
-    const form = ref({ board_id: null, name: '', description: null, position: 0 });
-   
-  
-    const rules = [
-      value => {
-        if (value) return true
-  
-        return 'Wprowadź wartość'
-      },
-    ];
-  
-    async function submit () {
-      form.value.board_id = store.state.route.params.id;
+  const form = ref({ board_id: null, name: '', description: null, position: 0 });
 
-      if (props.catalogId) {
-          await apiCatalogs.edit(props.catalogId, form);
-      } else {
-          await apiCatalogs.add(form);
-      }
-      emit('modal-close');
+  const rules = [
+    value => {
+      if (value) return true
+
+      return 'Wprowadź wartość'
+    },
+  ];
+
+  async function submit () {
+    form.value.board_id = store.state.route.params.id;
+
+    if (store.state.route.params.catalogId > 0) {
+        await apiCatalogs.edit(store.state.route.params.catalogId, form);
+    } else {
+        await apiCatalogs.add(form);
     }
+    
+    close();
+  }
 
-    if (props.catalogId) {
-      apiCatalogs.get(props.catalogId, form);
-    }
+  function close()
+  {
+    store.state.router.push({ name: 'catalogs', params: { id: store.state.route.params.id } });
+  }
+
+  if (store.state.route.params.catalogId > 0) {
+    apiCatalogs.get(store.state.route.params.catalogId, form);
+  }
 
 </script>
 
