@@ -58,8 +58,6 @@ export class Catalogs {
 
         await axios.post('/api/catalogs/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
-            this.store.commit('editItemIn', { name: 'catalogs', payload: response.data.data });
-
             this.store.commit(
                 'editItemIn',
                 {
@@ -81,12 +79,47 @@ export class Catalogs {
         this.store.commit('stopLoading');
     }
 
+    async editPosition(catalogId, oldPosition, newPosition) {
+        this.store.commit('startLoading');
+
+        await axios.post('/api/catalogs/' + catalogId, { position: newPosition, _method: 'patch'})
+            .then((response) => {
+                if (newPosition < oldPosition) {
+                    this.store.state.boards[this.boardIndex].catalogs
+                        .filter((item) => item.position >= newPosition && item.position < oldPosition)
+                        .map((item) => item.position += 1);
+                } else {
+                    this.store.state.boards[this.boardIndex].catalogs
+                        .filter((item) => item.position <= newPosition && item.position > oldPosition)
+                        .map((item) => item.position -= 1);
+                }
+                
+                this.store.commit(
+                    'editItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs,
+                        itemId: catalogId
+                    }
+                );
+
+                this.store.state.notify({
+                    type: 'success',
+                    title: "Zmieniono listę",
+                });
+            })
+            .catch((error) => standardErrorApiHandler(error, this.store));
+
+        this.store.commit('stopLoading');
+    }
+
     async delete(id) {
         this.store.commit('startLoading');
 
         await axios.post('/api/catalogs/' + id, { _method: 'delete'})
         .then((response) => {
-
             this.store.commit(
                 'deleteItemIn',
                 {

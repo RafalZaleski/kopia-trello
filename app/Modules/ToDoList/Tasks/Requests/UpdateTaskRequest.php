@@ -22,12 +22,12 @@ class UpdateTaskRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'catalog_id' => ['required', 'gt:0'],
-            'name' => ['required', 'min:1', 'max:255'],
+            'catalog_id' => ['gt:0'],
+            'name' => ['min:1', 'max:255'],
             'description' => ['nullable', 'max:65536'],
             'date' => ['nullable', 'date_format:"Y-m-d H:i"'],
             'place' => ['nullable', 'max:255'],
-            'position' => ['required', 'gte:0'],
+            'position' => ['gte:0'],
         ];
     }
 }

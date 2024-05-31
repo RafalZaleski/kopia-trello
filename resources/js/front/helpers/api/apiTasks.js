@@ -84,6 +84,81 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
+    async editPosition(taskId, oldCatalogId, newCatalogId, oldPosition, newPosition) {
+        this.store.commit('startLoading');
+
+        await axios.post('/api/tasks/' + taskId, { catalog_id: newCatalogId, position: newPosition, _method: 'patch'})
+        .then((response) => {
+
+            const oldCatalogIndex = this.store.state.boards[this.boardIndex]
+                .catalogs.findIndex((elem) => elem.id == oldCatalogId);
+
+            if (newCatalogId == oldCatalogId) {
+                if (newPosition < oldPosition) {
+                    this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
+                        .filter((item) => item.position >= newPosition && item.position < oldPosition)
+                        .map((item) => item.position += 1);
+                } else {
+                    this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
+                        .filter((item) => item.position <= newPosition && item.position > oldPosition)
+                        .map((item) => item.position -= 1);
+                }
+
+                this.store.commit(
+                    'editItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                        itemId: taskId
+                    }
+                );
+            } else {
+                const newCatalogIndex = this.store.state.boards[this.boardIndex]
+                    .catalogs.findIndex((elem) => elem.id == newCatalogId);
+
+                this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks
+                    .filter((item) => item.position >= newPosition)
+                    .map((item) => item.position += 1);
+                
+                this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
+                    .filter((item) => item.position > oldPosition)
+                    .map((item) => item.position -= 1);
+
+                this.store.commit(
+                    'deleteItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data.id,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                    }
+                );
+
+                this.store.commit(
+                    'addItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks
+                    }
+                );
+            }
+
+            
+            
+            this.store.state.notify({
+                type: 'success',
+                title: "Zmieniono zadanie",
+            });
+        })
+        .catch((error) => standardErrorApiHandler(error, this.store));
+
+        this.store.commit('stopLoading');
+    }
+
     async delete(id) {
         this.store.commit('startLoading');
 

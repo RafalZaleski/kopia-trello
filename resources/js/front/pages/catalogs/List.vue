@@ -105,6 +105,7 @@
   const showCatalogs = ref([]);
   const dragElem = ref(false);
   const dropArea = ref(false);
+  const handleDropStart = ref(false);
 
   function setTaskId(catalog_id, id) {
     store.state.router.push(
@@ -134,7 +135,9 @@
   async function filterCatalogsToShow() {
     await apiBoards.getAll().then(
       () => {
-        showCatalogs.value = store.state.boards.find((elem) => elem.id == store.state.route.params.boardId).catalogs;
+        showCatalogs.value = { ...store.state.boards
+          .find((elem) => elem.id == store.state.route.params.boardId).catalogs
+          .sort((a, b) => a.position - b.position) };
       }
     );
   }
@@ -144,12 +147,7 @@
   }
 
   onMounted(async () => {
-    if (!store.getters.useLocalStorage) {
-        localStorage.removeItem('catalogs')
-        store.state.catalogs = [];
-    }
-
-    filterCatalogsToShow();
+    await filterCatalogsToShow();
   })
 
   const handleDragStart = (itemData) => {
@@ -256,6 +254,12 @@
       return;
     }
 
+    if (!handleDropStart.value) {
+      handleDropStart.value = true;
+    } else {
+      return;
+    }
+
     const dragElemDom = document.getElementById(dragElem.value.type + '_' + dragElem.value.id);
     const dragElemParent = dragElemDom.parentElement;
 
@@ -270,30 +274,32 @@
     if (dragElem.value.type === 'task') {
       newPosition -= 6;
       const newCatalogId = dragElemParent.id.substring(8);
-      // if (newPosition != dragElem.value.position || dragElem.value.catalog_id != newCatalogId) {
-        dragElem.value.position = newPosition;
-        dragElem.value.catalog_id = newCatalogId;
-        await apiTasks.edit(dragElem.value.id, dragElem);
-        // .then(
-        //   async () => {
-        //     await filterCatalogsToShow();
-        //   }
-        // );
-      // }
+      if (newPosition != dragElem.value.position || dragElem.value.catalog_id != newCatalogId) {
+        await apiTasks.editPosition(dragElem.value.id, dragElem.value.catalog_id, newCatalogId, dragElem.value.position, newPosition)
+          .then(
+            async () => {
+              // if (!store.getters.useLocalStorage) {
+                await filterCatalogsToShow();
+              // }
+            }
+          );
+      }
     } else {
-      // if (newPosition != dragElem.value.position) {
-        dragElem.value.position = newPosition;
-        await apiCatalogs.edit(dragElem.value.id, dragElem);
-        // .then(
-        //   async () => {
-        //     await filterCatalogsToShow();
-        //   }
-        // );
-      // }
+      if (newPosition != dragElem.value.position) {
+        await apiCatalogs.editPosition(dragElem.value.id, dragElem.value.position, newPosition)
+          .then(
+            async () => {
+              // if (!store.getters.useLocalStorage) {
+                await filterCatalogsToShow();
+              // }
+            }
+          );
+      }
     }
 
     dragElem.value = false;
     dropArea.value = false;
+    handleDropStart.value = false;
   };
 
 </script>
