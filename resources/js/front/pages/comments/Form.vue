@@ -105,7 +105,7 @@
             { 
                 name: 'taskForm',
                 params: {
-                    id: store.state.route.params.id,
+                    boardId: store.state.route.params.boardId,
                     catalogId: store.state.route.params.catalogId,
                     taskId: store.state.route.params.taskId
                 }

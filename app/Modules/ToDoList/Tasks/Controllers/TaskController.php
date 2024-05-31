@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Modules\ToDoList\Tasks\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\ToDoList\Media\Resources\MediaResource;
 use App\Modules\ToDoList\Tasks\Requests\StoreTaskRequest;
 use App\Modules\ToDoList\Tasks\Requests\UpdateTaskRequest;
 use App\Modules\ToDoList\Sync\Requests\SyncRequest;
@@ -108,11 +109,10 @@ class TaskController extends Controller
         return response()->json(null, 204);
     }
 
-    public function addAttachment(Task $task): JsonResponse
+    public function addAttachment(Task $task): JsonResponse|MediaResource
     {
         if(request()->hasFile('file') && request()->file('file')->isValid()){
-            $task->addMediaFromRequest('file')->toMediaCollection('task_attachments');
-            return response()->json(null, 204);
+            return new MediaResource($task->addMediaFromRequest('file')->toMediaCollection('task_attachments'));
         }
 
         return response()->json(null, 500);

@@ -7,6 +7,7 @@ namespace App\Modules\ToDoList\Comments\Controllers;
 use App\Http\Controllers\Controller;
 use App\Modules\ToDoList\Comments\Requests\StoreCommentRequest;
 use App\Modules\ToDoList\Comments\Requests\UpdateCommentRequest;
+use App\Modules\ToDoList\Media\Resources\MediaResource;
 use App\Modules\ToDoList\Sync\Requests\SyncRequest;
 use App\Modules\ToDoList\Comments\Resources\ApiCommentResource;
 use App\Modules\ToDoList\Comments\Models\Comment;
@@ -77,11 +78,10 @@ class CommentController extends Controller
         return response()->json(null, 204);
     }
 
-    public function addAttachment(Comment $comment): JsonResponse
+    public function addAttachment(Comment $comment): JsonResponse|MediaResource
     {
         if(request()->hasFile('file') && request()->file('file')->isValid()){
-            $comment->addMediaFromRequest('file')->toMediaCollection('comment_attachments');
-            return response()->json(null, 204);
+            return new MediaResource($comment->addMediaFromRequest('file')->toMediaCollection('comment_attachments'));
         }
 
         return response()->json(null, 500);

@@ -111,7 +111,7 @@
       {
         name: 'taskForm',
         params: { 
-          id: store.state.route.params.id,
+          boardId: store.state.route.params.boardId,
           catalogId: catalog_id,
           taskId: id 
         }
@@ -134,13 +134,13 @@
   async function filterCatalogsToShow() {
     await apiBoards.getAll().then(
       () => {
-        showCatalogs.value = store.state.boards.find((elem) => elem.id == store.state.route.params.id).catalogs;
+        showCatalogs.value = store.state.boards.find((elem) => elem.id == store.state.route.params.boardId).catalogs;
       }
     );
   }
 
   function editCatalogForm(id) {
-    store.state.router.push({ name: 'catalogForm', params: { id: store.state.route.params.id, catalogId: id } });
+    store.state.router.push({ name: 'catalogForm', params: { boardId: store.state.route.params.boardId, catalogId: id } });
   }
 
   onMounted(async () => {

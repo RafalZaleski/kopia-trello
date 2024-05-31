@@ -49,20 +49,19 @@
   ];
 
   async function submit () {
-    form.value.board_id = store.state.route.params.id;
+    form.value.board_id = store.state.route.params.boardId;
 
     if (store.state.route.params.catalogId > 0) {
-        await apiCatalogs.edit(store.state.route.params.catalogId, form);
+      await apiCatalogs.edit(store.state.route.params.catalogId, form);
     } else {
-        await apiCatalogs.add(form);
+      await apiCatalogs.add(form);
     }
     
     close();
   }
 
-  function close()
-  {
-    store.state.router.push({ name: 'catalogs', params: { id: store.state.route.params.id } });
+  function close() {
+    store.state.router.push({ name: 'catalogs', params: { boardId: store.state.route.params.boardId } });
   }
 
   if (store.state.route.params.catalogId > 0) {

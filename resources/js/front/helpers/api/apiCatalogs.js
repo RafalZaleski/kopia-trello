@@ -4,41 +4,19 @@ import { standardErrorApiHandler } from '../standardErrorApiHandler.js';
 export class Catalogs {
     constructor(store) {
         this.store = store;
-    }
-
-    async getAll() {
-        this.store.commit('startLoading');
-
-        if (this.store.state.catalogs.length === 0) {
-            await axios.get('/api/get-catalogs-all')
-            .then((response) => {
-                this.store.commit('syncItems', { name: 'catalogs', payload: response.data.data });
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-        }
-        this.store.commit('stopLoading');
-    }
-
-    async getAllPaginate(catalogs, pagination) {
-        this.store.commit('startLoading');
-
-        await axios.get('/api/catalogs?page=' + pagination.value.current)
-            .then((response) => {
-                catalogs.value = response.data.data
-                pagination.value.current = response.data.meta.current_page;
-                pagination.value.total = response.data.meta.last_page;
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-
-        this.store.commit('stopLoading');
+        this.name = 'catalogs';
+        this.boardIndex = this.store.state.boards.findIndex((elem) => elem.id == store.state.route.params.boardId);
+        this.collectionName = 'boards';
     }
 
     async get(id, form) {
         this.store.commit('startLoading');
 
-        const task = this.store.state.catalogs.find((elem) => elem.id == id);
-        if (task) {
-            form.value = {...task};
+        const catalogIndex = this.store.state.boards[this.boardIndex].catalogs.findIndex((elem) => elem.id == id);
+        const catalog = this.store.state.boards[this.boardIndex].catalogs[catalogIndex];
+        
+        if (this.store.getters.useLocalStorage && catalog) {
+            form.value = { ...catalog };
         } else {
             await axios.get('/api/catalogs/' + id)
                 .then((response) => {
@@ -55,11 +33,19 @@ export class Catalogs {
 
         await axios.post('/api/catalogs', form.value)
             .then((response) => {
-                this.store.commit('addItemIn', { name: 'catalogs', payload: response.data.data });
-                form.value = { ...response.data.data };
+                this.store.commit(
+                    'addItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs,
+                    }
+                );
+
                 this.store.state.notify({
                     type: 'success',
-                    title: "Utworzono produkt",
+                    title: "Utworzono listę",
                 });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
@@ -73,15 +59,21 @@ export class Catalogs {
         await axios.post('/api/catalogs/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
             this.store.commit('editItemIn', { name: 'catalogs', payload: response.data.data });
-           
-            const boardIndex = this.store.state.boards.findIndex((elem) => elem.id == this.store.state.route.params.id);
-            const catalogIndex = this.store.state.boards[boardIndex].catalogs.findIndex((elem) => elem.id == this.store.state.route.params.catalogId);
-            this.store.state.boards[boardIndex].catalogs[catalogIndex] = { ...response.data.data };
 
-            form.value = { ...response.data.data };
+            this.store.commit(
+                'editItemIn',
+                {
+                    name: this.name,
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs,
+                    itemId: id
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "Zmieniono produkt",
+                title: "Zmieniono listę",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -94,38 +86,24 @@ export class Catalogs {
 
         await axios.post('/api/catalogs/' + id, { _method: 'delete'})
         .then((response) => {
-            this.store.commit('deleteItemIn', { name: 'catalogs', payload: id });
+
+            this.store.commit(
+                'deleteItemIn',
+                {
+                    name: this.name,
+                    payload: id,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs,
+                }
+            );
+            
             this.store.state.notify({
                 type: 'success',
-                title: "Usunięto produkt",
+                title: "Usunięto listę",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
     }
-
-    // async syncUpdated() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/catalogs/sync-updated?date=' + (this.store.state.catalogsSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncItems', { name: 'catalogs', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
-
-    // async syncDeleted() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/catalogs/sync-deleted?date=' + (this.store.state.catalogsSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncDelete', { name: 'catalogs', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
 }

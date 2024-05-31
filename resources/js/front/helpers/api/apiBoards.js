@@ -4,41 +4,51 @@ import { standardErrorApiHandler } from '../standardErrorApiHandler.js';
 export class Boards {
     constructor(store) {
         this.store = store;
+        this.name = 'boards';
+        this.collectionName = 'boards';
     }
 
     async getAll() {
         this.store.commit('startLoading');
 
-        // if (this.store.state.boards.length === 0) {
+        if (!this.store.getters.useLocalStorage || this.store.state.boards.length === 0) {
             await axios.get('/api/get-boards-all')
             .then((response) => {
-                this.store.commit('syncItems', { name: 'boards', payload: response.data.data });
+                this.store.commit(
+                    'syncItems',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards
+                    }
+                );
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
-        // }
+        }
         this.store.commit('stopLoading');
     }
 
-    async getAllPaginate(boards, pagination) {
-        this.store.commit('startLoading');
+    // async getAllPaginate(boards, pagination) {
+    //     this.store.commit('startLoading');
 
-        await axios.get('/api/boards?page=' + pagination.value.current)
-            .then((response) => {
-                boards.value = response.data.data
-                pagination.value.current = response.data.meta.current_page;
-                pagination.value.total = response.data.meta.last_page;
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
+    //     await axios.get('/api/boards?page=' + pagination.value.current)
+    //         .then((response) => {
+    //             boards.value = response.data.data
+    //             pagination.value.current = response.data.meta.current_page;
+    //             pagination.value.total = response.data.meta.last_page;
+    //         })
+    //         .catch((error) => standardErrorApiHandler(error, this.store));
 
-        this.store.commit('stopLoading');
-    }
+    //     this.store.commit('stopLoading');
+    // }
 
     async get(id, form) {
         this.store.commit('startLoading');
 
-        const task = this.store.state.boards.find((elem) => elem.id == id);
-        if (task) {
-            form.value = {...task};
+        const board = this.store.state.boards.find((elem) => elem.id == id);
+        if (this.store.getters.useLocalStorage && board) {
+            form.value = { ...board };
         } else {
             await axios.get('/api/boards/' + id)
                 .then((response) => {
@@ -55,11 +65,19 @@ export class Boards {
 
         await axios.post('/api/boards', form.value)
             .then((response) => {
-                this.store.commit('addItemIn', { name: 'boards', payload: response.data.data });
-                form.value = { ...response.data.data };
+                this.store.commit(
+                    'addItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards
+                    }
+                );
+
                 this.store.state.notify({
                     type: 'success',
-                    title: "Utworzono produkt",
+                    title: "Utworzono tablicę",
                 });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
@@ -72,11 +90,20 @@ export class Boards {
 
         await axios.post('/api/boards/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
-            this.store.commit('editItemIn', { name: 'boards', payload: response.data.data });
-            form.value = { ...response.data.data };
+            this.store.commit(
+                'editItemIn',
+                {
+                    name: this.name,
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards,
+                    itemId: id 
+                }
+            );
+            
             this.store.state.notify({
                 type: 'success',
-                title: "Zmieniono produkt",
+                title: "Zmieniono tablicę",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -89,10 +116,18 @@ export class Boards {
 
         await axios.post('/api/boards/' + id, { _method: 'delete'})
         .then((response) => {
-            this.store.commit('deleteItemIn', { name: 'boards', payload: id });
+            this.store.commit(
+                'deleteItemIn',
+                { 
+                    name: this.name,
+                    payload: id,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards,
+                }
+            );
             this.store.state.notify({
                 type: 'success',
-                title: "Usunięto produkt",
+                title: "Usunięto tablicę",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));

@@ -4,48 +4,32 @@ import { standardErrorApiHandler } from '../standardErrorApiHandler.js';
 export class Comments {
     constructor(store) {
         this.store = store;
-    }
-
-    async getAll() {
-        this.store.commit('startLoading');
-
-        if (this.store.state.comments.length === 0) {
-            await axios.get('/api/get-comments-all')
-            .then((response) => {
-                this.store.commit('syncItems', { name: 'comments', payload: response.data.data });
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-        }
-        this.store.commit('stopLoading');
-    }
-
-    async getAllPaginate(comments, pagination) {
-        this.store.commit('startLoading');
-
-        await axios.get('/api/comments?page=' + pagination.value.current)
-            .then((response) => {
-                comments.value = response.data.data
-                pagination.value.current = response.data.meta.current_page;
-                pagination.value.total = response.data.meta.last_page;
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-
-        this.store.commit('stopLoading');
+        this.name = 'comments';
+        this.boardIndex = this.store.state.boards.findIndex((elem) => elem.id == store.state.route.params.boardId);
+        this.catalogIndex = this.store.state.boards[this.boardIndex].catalogs
+            .findIndex((elem) => elem.id == store.state.route.params.catalogId);
+        this.taskIndex = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks
+            .findIndex((elem) => elem.id == store.state.route.params.taskId);
+        this.collectionName = 'boards';
     }
 
     async get(id, form) {
         this.store.commit('startLoading');
 
-        // const comment = this.store.state.comments.find((elem) => elem.id == id);
-        // if (comment) {
-        //     form.value = {...comment};
-        // } else {
+        const commentIndex = this.store.state.boards[this.boardIndex]
+            .catalogs[this.catalogIndex].tasks[this.taskIndex].comments.findIndex((elem) => elem.id == id);
+        const comment = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+            .tasks[this.taskIndex].comments[commentIndex];
+
+        if (this.store.getters.useLocalStorage && comment) {
+            form.value = { ...comment };
+        } else {
             await axios.get('/api/comments/' + id)
                 .then((response) => {
                     form.value = { ...response.data.data };
                 })
                 .catch((error) => standardErrorApiHandler(error, this.store));
-        // }
+        }
 
         this.store.commit('stopLoading');
     }
@@ -55,11 +39,22 @@ export class Comments {
 
         await axios.post('/api/comments', form.value)
             .then((response) => {
-                this.store.commit('addItemIn', { name: 'comments', payload: response.data.data });
+                this.store.commit(
+                    'addItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                            .tasks[this.taskIndex].comments,
+                    }
+                );
+
                 form.value = { ...response.data.data };
+                
                 this.store.state.notify({
                     type: 'success',
-                    title: "Utworzono produkt",
+                    title: "Dodano komentarz",
                 });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
@@ -72,11 +67,23 @@ export class Comments {
 
         await axios.post('/api/comments/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
-            this.store.commit('editItemIn', { name: 'comments', payload: response.data.data });
+            this.store.commit(
+                'editItemIn',
+                {
+                    name: this.name,
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                        .tasks[this.taskIndex].comments,
+                    itemId: id
+                }
+            );
+
             form.value = { ...response.data.data };
+            
             this.store.state.notify({
                 type: 'success',
-                title: "Zmieniono produkt",
+                title: "Zmieniono komentarz",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -89,10 +96,20 @@ export class Comments {
 
         await axios.post('/api/comments/' + id, { _method: 'delete'})
         .then((response) => {
-            this.store.commit('deleteItemIn', { name: 'comments', payload: id });
+            this.store.commit(
+                'deleteItemIn',
+                {
+                    name: this.name,
+                    payload: id,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                        .tasks[this.taskIndex].comments,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "Usunięto produkt",
+                title: "Usunięto komentarz",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -100,21 +117,35 @@ export class Comments {
         this.store.commit('stopLoading');
     }
 
-    async addAttachment(id, file) {
+    async addAttachment(commentId, file) {
         this.store.commit('startLoading');
 
         const formData = new FormData();
         formData.append('file', file);
 
-        await axios.post('/api/comments/' + id + '/addAttachment', formData, {
+        await axios.post('/api/comments/' + commentId + '/addAttachment', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
         })
         .then((response) => {
+            const commentIndex = this.store.state.boards[this.boardIndex]
+                .catalogs[this.catalogIndex].tasks[this.taskIndex].comments.findIndex((elem) => elem.id == commentId);
+
+            this.store.commit(
+                'addItemIn',
+                {
+                    name: 'attachments',
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                        .tasks[this.taskIndex].comments[commentIndex].attachments,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "dodano załącznik",
+                title: "Dodano załącznik",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -122,42 +153,32 @@ export class Comments {
         this.store.commit('stopLoading');
     }
 
-    async deleteAttachment(id, commentId) {
+    async deleteAttachment(attachmentId, commentId) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/comments/' + commentId + '/deleteAttachment/' + id, { _method: 'delete'})
+        await axios.post('/api/comments/' + commentId + '/deleteAttachment/' + attachmentId, { _method: 'delete'})
         .then((response) => {
+            const commentIndex = this.store.state.boards[this.boardIndex]
+                .catalogs[this.catalogIndex].tasks[this.taskIndex].comments.findIndex((elem) => elem.id == commentId);
+
+            this.store.commit(
+                'deleteItemIn',
+                {
+                    name: 'attachments',
+                    payload: attachmentId,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                        .tasks[this.taskIndex].comments[commentIndex].attachments,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "usunięto załącznik",
+                title: "Usunięto załącznik",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
     }
-
-    // async syncUpdated() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/comments/sync-updated?date=' + (this.store.state.commentsSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncItems', { name: 'comments', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
-
-    // async syncDeleted() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/comments/sync-deleted?date=' + (this.store.state.commentsSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncDelete', { name: 'comments', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
 }

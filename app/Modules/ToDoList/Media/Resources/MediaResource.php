@@ -2,13 +2,12 @@
 
 declare(strict_types=1);
 
-namespace App\Modules\ToDoList\Comments\Resources;
+namespace App\Modules\ToDoList\Media\Resources;
 
-use App\Modules\ToDoList\Media\Resources\MediaResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-class ApiCommentResource extends JsonResource
+class MediaResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -19,8 +18,7 @@ class ApiCommentResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'description' => $this->description,
-            'attachments' => MediaResource::collection($this->getMedia('comment_attachments')),
+            'original_url' => $this->getUrl('media-webp'),
         ];
     }
 }

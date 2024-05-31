@@ -4,48 +4,29 @@ import { standardErrorApiHandler } from '../standardErrorApiHandler.js';
 export class Tasks {
     constructor(store) {
         this.store = store;
-    }
-
-    async getAll() {
-        this.store.commit('startLoading');
-
-        if (this.store.state.tasks.length === 0) {
-            await axios.get('/api/get-tasks-all')
-            .then((response) => {
-                this.store.commit('syncItems', { name: 'tasks', payload: response.data.data });
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-        }
-        this.store.commit('stopLoading');
-    }
-
-    async getAllPaginate(tasks, pagination) {
-        this.store.commit('startLoading');
-
-        await axios.get('/api/tasks?page=' + pagination.value.current)
-            .then((response) => {
-                tasks.value = response.data.data
-                pagination.value.current = response.data.meta.current_page;
-                pagination.value.total = response.data.meta.last_page;
-            })
-            .catch((error) => standardErrorApiHandler(error, this.store));
-
-        this.store.commit('stopLoading');
+        this.name = 'tasks';
+        this.boardIndex = this.store.state.boards.findIndex((elem) => elem.id == store.state.route.params.boardId);
+        this.catalogIndex = this.store.state.boards[this.boardIndex]
+            .catalogs.findIndex((elem) => elem.id == store.state.route.params.catalogId);
+        this.collectionName = 'boards';
     }
 
     async get(id, form) {
         this.store.commit('startLoading');
 
-        // const task = this.store.state.tasks.find((elem) => elem.id == id);
-        // if (task) {
-        //     form.value = {...task};
-        // } else {
+        const taskIndex = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+            .tasks.findIndex((elem) => elem.id == id);
+        const task = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks[taskIndex];
+        
+        if (this.store.getters.useLocalStorage && task) {
+            form.value = { ...task };
+        } else {
             await axios.get('/api/tasks/' + id)
                 .then((response) => {
                     form.value = { ...response.data.data };
                 })
                 .catch((error) => standardErrorApiHandler(error, this.store));
-        // }
+        }
 
         this.store.commit('stopLoading');
     }
@@ -55,11 +36,21 @@ export class Tasks {
 
         await axios.post('/api/tasks', form.value)
             .then((response) => {
-                this.store.commit('addItemIn', { name: 'tasks', payload: response.data.data });
+                this.store.commit(
+                    'addItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks
+                    }
+                );
+
                 form.value = { ...response.data.data };
+                
                 this.store.state.notify({
                     type: 'success',
-                    title: "Utworzono produkt",
+                    title: "Dodano zadanie",
                 });
             })
             .catch((error) => standardErrorApiHandler(error, this.store));
@@ -72,11 +63,20 @@ export class Tasks {
 
         await axios.post('/api/tasks/' + id, { ...form.value, _method: 'patch'})
         .then((response) => {
-            this.store.commit('editItemIn', { name: 'tasks', payload: response.data.data });
-            form.value = { ...response.data.data };
+            this.store.commit(
+                'editItemIn',
+                {
+                    name: this.name,
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks,
+                    itemId: id
+                }
+            );
+            
             this.store.state.notify({
                 type: 'success',
-                title: "Zmieniono produkt",
+                title: "Zmieniono zadanie",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -89,10 +89,19 @@ export class Tasks {
 
         await axios.post('/api/tasks/' + id, { _method: 'delete'})
         .then((response) => {
-            this.store.commit('deleteItemIn', { name: 'tasks', payload: id });
+            this.store.commit(
+                'deleteItemIn',
+                {
+                    name: this.name,
+                    payload: id,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "Usunięto produkt",
+                title: "Usunięto zadanie",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -100,21 +109,34 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
-    async addAttachment(id, file) {
+    async addAttachment(taskId, file) {
         this.store.commit('startLoading');
 
         const formData = new FormData();
         formData.append('file', file);
 
-        await axios.post('/api/tasks/' + id + '/addAttachment', formData, {
+        await axios.post('/api/tasks/' + taskId + '/addAttachment', formData, {
             headers: {
               'Content-Type': 'multipart/form-data'
             }
         })
         .then((response) => {
+            const taskIndex = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                .tasks.findIndex((elem) => elem.id == taskId);
+
+            this.store.commit(
+                'addItemIn',
+                {
+                    name: 'attachments',
+                    payload: response.data.data,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks[taskIndex].attachments,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "dodano załącznik",
+                title: 'Dodano załącznik',
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
@@ -122,42 +144,31 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
-    async deleteAttachment(id, taskId) {
+    async deleteAttachment(attachmentId, taskId) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + taskId + '/deleteAttachment/' + id, { _method: 'delete'})
+        await axios.post('/api/tasks/' + taskId + '/deleteAttachment/' + attachmentId, { _method: 'delete'})
         .then((response) => {
+            const taskIndex = this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                .tasks.findIndex((elem) => elem.id == taskId);
+
+            this.store.commit(
+                'deleteItemIn',
+                {
+                    name: 'attachments',
+                    payload: attachmentId,
+                    collectionName: this.collectionName,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks[taskIndex].attachments,
+                }
+            );
+
             this.store.state.notify({
                 type: 'success',
-                title: "usunięto załącznik",
+                title: "Usunięto załącznik",
             });
         })
         .catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
     }
-
-    // async syncUpdated() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/tasks/sync-updated?date=' + (this.store.state.tasksSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncItems', { name: 'tasks', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
-
-    // async syncDeleted() {
-    //     this.store.commit('startLoading');
-        
-    //     await axios.get('/api/tasks/sync-deleted?date=' + (this.store.state.tasksSyncDate ?? 0))
-    //     .then((response) => {
-    //         this.store.commit('syncDelete', { name: 'tasks', payload: response.data.data });
-    //     })
-    //     .catch((error) => standardErrorApiHandler(error, this.store));
-
-    //     this.store.commit('stopLoading');
-    // }
 }

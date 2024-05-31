@@ -12,12 +12,6 @@ export default createStore({
       useLocalStorage: localStorage.getItem('useLocalStorage') ?? false,
       boards: JSON.parse(localStorage.getItem('boards')) ?? [],
       boardsSyncDate: localStorage.getItem('boardsSyncDate') ?? null,
-      catalogs: JSON.parse(localStorage.getItem('catalogs')) ?? [],
-      catalogsSyncDate: localStorage.getItem('catalogsSyncDate') ?? null,
-      tasks: JSON.parse(localStorage.getItem('tasks')) ?? [],
-      tasksSyncDate: localStorage.getItem('tasksSyncDate') ?? null,
-      comments: JSON.parse(localStorage.getItem('comments')) ?? [],
-      commentsSyncDate: localStorage.getItem('commentsSyncDate') ?? null,
     }
   },
   getters: {
@@ -33,24 +27,12 @@ export default createStore({
   },
   mutations: {
     restartState(state) {
-      localStorage.removeItem('boards')
-      localStorage.removeItem('boardsSyncDate')
-      localStorage.removeItem('catalogs')
-      localStorage.removeItem('catalogsSyncDate')
-      localStorage.removeItem('tasks')
-      localStorage.removeItem('tasksSyncDate')
-      localStorage.removeItem('comments')
-      localStorage.removeItem('commentsSyncDate')
+      localStorage.removeItem('boards');
+      localStorage.removeItem('boardsSyncDate');
       state.useLocalStorage = false,
       state.login = false;
-      state.tasks = [];
-      state.tasksSyncDate = null;
-      state.comments = [];
-      state.commentsSyncDate = null;
       state.boards = [];
       state.boardsSyncDate = null;
-      state.catalogs = [];
-      state.catalogsSyncDate = null;
     },
     login(state) {
       state.login = true;
@@ -83,46 +65,45 @@ export default createStore({
       localStorage.setItem('useLocalStorage', useLocalStorage);
     },
     addItemIn(state, payload) {
-      state[payload.name].push(payload.payload);
-      
-      const storage = JSON.parse(localStorage.getItem(payload.name)) ?? [];
-      storage.push(payload.payload);
-      localStorage.setItem(payload.name, JSON.stringify(storage));
+      payload.collection.push(payload.payload)
+      localStorage.setItem(payload.collectionName, JSON.stringify(state[payload.collectionName]));
     },
     editItemIn(state, payload) {
-      const elemIndex = state[payload.name].findIndex((elem) => elem.id == payload.payload.id);
-      if (elemIndex > -1) {
-          state[payload.name][elemIndex] = { ...payload.payload };
-      }
-
-      const storage = JSON.parse(localStorage.getItem(payload.name)) ?? [];
-      const elemIndexStorage = storage.findIndex((elem) => elem.id == payload.payload.id);
-      if (elemIndexStorage > -1) {
-        storage[elemIndexStorage] = { ...payload.payload };
-        localStorage.setItem(payload.name, JSON.stringify(storage));
-      }
+      const itemIndex = payload.collection.findIndex((elem) => elem.id == payload.itemId);
+      payload.collection[itemIndex] = { ...payload.payload }
+      localStorage.setItem(payload.collectionName, JSON.stringify(state[payload.collectionName]));
     },
     deleteItemIn(state, payload) {
-      const elemIndex = state[payload.name].findIndex((elem) => elem.id == payload.payload);
-      if (elemIndex > -1) {
-          state[payload.name].splice(elemIndex, 1);
-      }
-
-      const storage = JSON.parse(localStorage.getItem(payload.name)) ?? [];
-      const elemIndexStorage = storage.findIndex((elem) => elem.id == payload.payload);
-      if (elemIndexStorage > -1) {
-        storage.splice(elemIndexStorage, 1);
-        localStorage.setItem(payload.name, JSON.stringify(storage));
-      }
+      const itemIndex = payload.collection.findIndex((elem) => elem.id == payload.payload);
+      payload.collection.splice(itemIndex, 1);
+      localStorage.setItem(payload.collectionName, JSON.stringify(state[payload.collectionName]));
     },
     syncItems(state, payload) {
       state[payload.name + 'SyncDate'] = Date.now() / 1000;
       for (let i = 0; i < payload.payload.length; i++) {
         const item = state[payload.name].find((element) => element.id === payload.payload[i].id);
+        
         if (item) {
-          this.commit('editItemIn', { name: payload.name, payload: payload.payload[i] });
+          this.commit(
+            'editItemIn',
+            {
+                name: payload.name,
+                payload: payload.payload[i],
+                collectionName: payload.collectionName,
+                collection: payload.collection,
+                itemId: payload.payload[i].id 
+            }
+          );
         } else {
-          this.commit('addItemIn', { name: payload.name, payload: payload.payload[i] });
+          this.commit(
+            'addItemIn',
+            {
+              name: payload.name,
+              payload: payload.payload[i],
+              collectionName: payload.collectionName,
+              collection: payload.collection 
+            }
+          );
         }
       }
     },
@@ -130,6 +111,15 @@ export default createStore({
       for (let i = 0; i < payload.payload.length; i++) {
         const elemIndex = state[payload.name].findIndex((elem) => elem.id == payload.payload[i].id);
         if (elemIndex > -1) {
+          this.commit(
+            'deleteItemIn',
+            { 
+                name: payload.name,
+                payload: payload.payload[i].id,
+                collectionName: payload.collectionName,
+                collection: payload.collection,
+            }
+          );
           this.commit('deleteItemIn', { name: payload.name, payload: payload.payload[i].id });
         }
       }

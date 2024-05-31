@@ -1,8 +1,7 @@
 <template>
-  <div v-if="isOpen">
-    <div class="cover" @click="emit('modal-close')"></div>
+    <div class="cover" @click="close()"></div>
     <v-sheet class="sheet">
-      <div v-if="props.boardId">Edytuj tablice</div>
+      <div v-if="store.state.route.params.boardId > 0">Edytuj tablice</div>
       <div v-else>Dodaj tablice</div>
       <v-form @submit.prevent="submit">
         <v-text-field
@@ -22,7 +21,6 @@
         >Zapisz</v-btn>
       </v-form>
     </v-sheet>
-  </div>
 </template>
   
 <script setup>
@@ -33,12 +31,6 @@
       
     const store = useStore();
     const apiBoards = new Boards(store);
-
-    const props = defineProps({
-        isOpen: Boolean,
-        boardId: Number
-    });
-    const emit = defineEmits(["modal-close"]);
   
     const form = ref({ name: '', description: null });
    
@@ -52,16 +44,21 @@
     ];
   
     async function submit () {
-      if (props.boardId) {
-          await apiBoards.edit(props.boardId, form);
+      if (store.state.route.params.boardId > 0) {
+          await apiBoards.edit(store.state.route.params.boardId, form);
       } else {
           await apiBoards.add(form);
       }
-      emit('modal-close');
+      
+      close();
     }
 
-    if (props.boardId) {
-      apiBoards.get(props.boardId, form);
+    function close() {
+      store.state.router.push({ name: 'boards' });
+    }
+
+    if (store.state.route.params.boardId > 0) {
+      apiBoards.get(store.state.route.params.boardId, form);
     }
 
 </script>

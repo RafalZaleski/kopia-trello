@@ -194,7 +194,7 @@
         { 
           name: 'commentForm',
           params: { 
-            id: store.state.route.params.id, 
+            boardId: store.state.route.params.boardId, 
             catalogId: store.state.route.params.catalogId, 
             taskId: store.state.route.params.taskId,
             commentId: id
@@ -258,7 +258,7 @@
     }
 
     function close() {
-      store.state.router.push({ name: 'catalogs', params: { id: store.state.route.params.id } });
+      store.state.router.push({ name: 'catalogs', params: { boardId: store.state.route.params.boardId } });
     }
 
     if (store.state.route.params.taskId > 0) {
