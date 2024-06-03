@@ -3,7 +3,7 @@
     <v-sheet class="sheet">
       <div v-if="store.state.route.params.boardId > 0">Edytuj tablice</div>
       <div v-else>Dodaj tablice</div>
-      <v-form @submit.prevent="submit">
+      <v-form @submit.prevent="submit()" ref="formToSend">
         <v-text-field
           v-model="form.name"
           label="Nazwa"
@@ -33,24 +33,32 @@
     const apiBoards = new Boards(store);
   
     const form = ref({ name: '', description: null });
+    const formToSend = ref(null);
    
   
     const rules = [
       value => {
-        if (value) return true
+        if (value?.length > 0) return true
   
-        return 'Wprowadź wartość'
+        return 'Wprowadź wartość (min 1 znak)'
       },
     ];
   
     async function submit () {
-      if (store.state.route.params.boardId > 0) {
-          await apiBoards.edit(store.state.route.params.boardId, form);
-      } else {
-          await apiBoards.add(form);
-      }
+      const { valid } = await formToSend.value.validate();
+      let ans = false;
       
-      close();
+      if (valid) {
+        if (store.state.route.params.boardId > 0) {
+            ans = await apiBoards.edit(store.state.route.params.boardId, form);
+        } else {
+            ans = await apiBoards.add(form);
+        }
+        
+        if (ans) {
+          close();
+        }
+      }
     }
 
     function close() {

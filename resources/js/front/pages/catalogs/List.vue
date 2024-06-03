@@ -17,7 +17,6 @@
     >
     <div
       v-for="catalog in showCatalogs"
-      :key="catalog.position"
       :id="'catalog_' + catalog.id"
       class="catalog"
       draggable="true"
@@ -29,7 +28,7 @@
       >
       <v-btn
         :disabled="store.getters.isLoading"
-        @click="setTaskId(catalog.id, 0)"
+        @click="setTaskId(0, catalog.id)"
         color="green"
         class="ma-1"
       >
@@ -58,7 +57,6 @@
       <div class="catalog_description">{{ catalog.description }}</div>
       <br>
       <div v-for="task in catalog.tasks"
-        :key="task.position"
         :id="'task_' + task.id"
         draggable="true"
         v-on:dragstart="handleDragStart({ ...task, type: 'task' })"
@@ -66,10 +64,10 @@
         v-on:dragover="checkArea($event)"
         class="task"
       >
-        <div class="task_name" @click="setTaskId(catalog.id, task.id)">{{ task.name }}</div>
+        <div class="task_name" @click="setTaskId(task.id, catalog.id)">{{ task.name }}</div>
         <v-btn 
           :disabled="store.getters.isLoading"
-          @click="deleteTaskFromList(task.id)"
+          @click="deleteTaskFromList(task.id, catalog.id)"
           color="red"
           class="ma-1"
         >
@@ -107,43 +105,39 @@
   const dropArea = ref(false);
   const handleDropStart = ref(false);
 
-  function setTaskId(catalog_id, id) {
+  async function filterCatalogsToShow() {
+    await apiBoards.getAll().then(
+      () => {
+        showCatalogs.value = store.state.boards
+          .find((elem) => elem.id == store.state.route.params.boardId).catalogs
+          .sort((a, b) => a.position - b.position);
+      }
+    );
+  }
+
+  function editCatalogForm(catalogId) {
+    store.state.router.push({ name: 'catalogForm', params: { boardId: store.state.route.params.boardId, catalogId: catalogId } });
+  }
+
+  async function deleteCatalogFromList(catalogId) {
+    await apiCatalogs.delete(catalogId);
+  }
+
+  function setTaskId(taskId, catalogId) {
     store.state.router.push(
       {
         name: 'taskForm',
         params: { 
           boardId: store.state.route.params.boardId,
-          catalogId: catalog_id,
-          taskId: id 
+          catalogId: catalogId,
+          taskId: taskId 
         }
       }
     );
   }
 
-  async function deleteCatalogFromList(id) {
-    await apiCatalogs.delete(id)
-
-    filterCatalogsToShow();
-  }
-
-  async function deleteTaskFromList(id) {
-    await apiTasks.delete(id)
-    
-    filterCatalogsToShow();
-  }
-
-  async function filterCatalogsToShow() {
-    await apiBoards.getAll().then(
-      () => {
-        showCatalogs.value = { ...store.state.boards
-          .find((elem) => elem.id == store.state.route.params.boardId).catalogs
-          .sort((a, b) => a.position - b.position) };
-      }
-    );
-  }
-
-  function editCatalogForm(id) {
-    store.state.router.push({ name: 'catalogForm', params: { boardId: store.state.route.params.boardId, catalogId: id } });
+  async function deleteTaskFromList(taskId, catalogId) {
+    await apiTasks.delete(taskId, catalogId);
   }
 
   onMounted(async () => {
@@ -275,14 +269,19 @@
       newPosition -= 6;
       const newCatalogId = dragElemParent.id.substring(8);
       if (newPosition != dragElem.value.position || dragElem.value.catalog_id != newCatalogId) {
-        await apiTasks.editPosition(dragElem.value.id, dragElem.value.catalog_id, newCatalogId, dragElem.value.position, newPosition)
-          .then(
-            async () => {
-              // if (!store.getters.useLocalStorage) {
-                await filterCatalogsToShow();
-              // }
-            }
-          );
+        await apiTasks.editPosition(
+          dragElem.value.id,
+          dragElem.value.catalog_id,
+          newCatalogId,
+          dragElem.value.position,
+          newPosition
+        ).then(
+          async () => {
+            // if (!store.getters.useLocalStorage) {
+              await filterCatalogsToShow();
+            // }
+          }
+        );
       }
     } else {
       if (newPosition != dragElem.value.position) {

@@ -34,7 +34,7 @@ export class Tasks {
     async add(form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks', form.value)
+        const ans = await axios.post('/api/tasks', form.value)
             .then((response) => {
                 this.store.commit(
                     'addItemIn',
@@ -52,36 +52,48 @@ export class Tasks {
                     type: 'success',
                     title: "Dodano zadanie",
                 });
+
+                return true;
             })
-            .catch((error) => standardErrorApiHandler(error, this.store));
+            .catch((error) => {
+                standardErrorApiHandler(error, this.store);
+                return false;
+            });
 
         this.store.commit('stopLoading');
+        return ans;
     }
 
     async edit(id, form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + id, { ...form.value, _method: 'patch'})
-        .then((response) => {
-            this.store.commit(
-                'editItemIn',
-                {
-                    name: this.name,
-                    payload: response.data.data,
-                    collectionName: this.collectionName,
-                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks,
-                    itemId: id
-                }
-            );
-            
-            this.store.state.notify({
-                type: 'success',
-                title: "Zmieniono zadanie",
+        const ans = await axios.post('/api/tasks/' + id, { ...form.value, _method: 'patch'})
+            .then((response) => {
+                this.store.commit(
+                    'editItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks,
+                        itemId: id
+                    }
+                );
+                
+                this.store.state.notify({
+                    type: 'success',
+                    title: "Zmieniono zadanie",
+                });
+
+                return true;
+            })
+            .catch((error) => {
+                standardErrorApiHandler(error, this.store);
+                return false;
             });
-        })
-        .catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
+        return ans;
     }
 
     async editPosition(taskId, oldCatalogId, newCatalogId, oldPosition, newPosition) {
@@ -159,18 +171,27 @@ export class Tasks {
         this.store.commit('stopLoading');
     }
 
-    async delete(id) {
+    async delete(taskId, catalogId = null) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/tasks/' + id, { _method: 'delete'})
+        let catalogIndex;
+
+        if (catalogId) {
+            catalogIndex = this.store.state.boards[this.boardIndex]
+                .catalogs.findIndex((elem) => elem.id == catalogId);
+        } else {
+            catalogIndex = this.catalogIndex;
+        }
+
+        await axios.post('/api/tasks/' + taskId, { _method: 'delete'})
         .then((response) => {
             this.store.commit(
                 'deleteItemIn',
                 {
                     name: this.name,
-                    payload: id,
+                    payload: taskId,
                     collectionName: this.collectionName,
-                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex].tasks,
+                    collection: this.store.state.boards[this.boardIndex].catalogs[catalogIndex].tasks,
                 }
             );
 

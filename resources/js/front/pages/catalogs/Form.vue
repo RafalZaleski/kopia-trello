@@ -3,7 +3,7 @@
   <v-sheet class="sheet">
     <div v-if="store.state.route.params.catalogId">Edytuj katalog</div>
     <div v-else>Dodaj katalog</div>
-    <v-form @submit.prevent="submit()">
+    <v-form @submit.prevent="submit()" ref="formToSend">
       <v-text-field
         v-model="form.name"
         label="Nazwa"
@@ -39,25 +39,32 @@
   const apiCatalogs = new Catalogs(store);
 
   const form = ref({ board_id: null, name: '', description: null, position: 0 });
+  const formToSend = ref(null);
 
   const rules = [
     value => {
-      if (value) return true
-
-      return 'Wprowadź wartość'
+      if (value?.length > 0) return true
+      
+      return 'Wprowadź wartość (min 1 znak)'
     },
   ];
 
   async function submit () {
     form.value.board_id = store.state.route.params.boardId;
-
-    if (store.state.route.params.catalogId > 0) {
-      await apiCatalogs.edit(store.state.route.params.catalogId, form);
-    } else {
-      await apiCatalogs.add(form);
+    const { valid } = await formToSend.value.validate();
+    let ans = false;
+    
+    if (valid) {
+      if (store.state.route.params.catalogId > 0) {
+        ans = await apiCatalogs.edit(store.state.route.params.catalogId, form);
+      } else {
+        ans = await apiCatalogs.add(form);
+      }
     }
     
-    close();
+    if (ans) {
+      close();
+    }
   }
 
   function close() {

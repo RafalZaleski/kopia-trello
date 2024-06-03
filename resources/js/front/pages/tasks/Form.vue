@@ -3,7 +3,7 @@
   <v-sheet class="sheet">
     <div v-if="!isNew">Edytuj zadanie</div>
     <div v-else>Dodaj zadanie</div>
-    <v-form @submit.prevent="submit()">
+    <v-form @submit.prevent="submit()" ref="formToSendTask">
       <v-text-field
         v-model="form.name"
         label="nazwa"
@@ -138,12 +138,13 @@
         attachments: []
       }
     );
+    const formToSendTask = ref(null);
 
     const rules = [
       value => {
-        if (value) return true
+        if (value?.length > 0) return true
   
-        return 'Wprowadź wartość'
+        return 'Wprowadź wartość (min 1 znak)'
       },
     ];
 
@@ -189,7 +190,7 @@
       return date.getFullYear() + '-' + month + '-' + day;
     }
 
-    function setCommentId(id) {
+    function setCommentId(commentId) {
       store.state.router.push(
         { 
           name: 'commentForm',
@@ -197,14 +198,14 @@
             boardId: store.state.route.params.boardId, 
             catalogId: store.state.route.params.catalogId, 
             taskId: store.state.route.params.taskId,
-            commentId: id
+            commentId: commentId
           } 
         }
       );
     }
 
-    async function deleteCommentFromList(id) {
-      await apiComments.delete(id).then(
+    async function deleteCommentFromList(commentId) {
+      await apiComments.delete(commentId).then(
         () => {
           const tmpForm = { value: {} };
           apiTasks.get(taskId.value, tmpForm).then(
@@ -244,9 +245,16 @@
     }
   
     async function submit() {
-      await apiTasks.edit(taskId.value, form);
+      const { valid } = await formToSendTask.value.validate();
+      let ans = false;
+      
+      if (valid) {
+        ans = await apiTasks.edit(taskId.value, form);
+      }
 
-      close();
+      if (ans) {
+        close();
+      }
     }
 
     async function removeEverythingAndEmitClose() {

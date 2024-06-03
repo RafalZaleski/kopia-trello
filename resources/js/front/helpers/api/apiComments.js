@@ -37,7 +37,7 @@ export class Comments {
     async add(form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/comments', form.value)
+        const ans = await axios.post('/api/comments', form.value)
             .then((response) => {
                 this.store.commit(
                     'addItemIn',
@@ -56,39 +56,50 @@ export class Comments {
                     type: 'success',
                     title: "Dodano komentarz",
                 });
+
+                return true;
             })
-            .catch((error) => standardErrorApiHandler(error, this.store));
+            .catch((error) => {
+                standardErrorApiHandler(error, this.store)
+                return false;
+            });
 
         this.store.commit('stopLoading');
+        return ans;
     }
 
     async edit(id, form) {
         this.store.commit('startLoading');
 
-        await axios.post('/api/comments/' + id, { ...form.value, _method: 'patch'})
-        .then((response) => {
-            this.store.commit(
-                'editItemIn',
-                {
-                    name: this.name,
-                    payload: response.data.data,
-                    collectionName: this.collectionName,
-                    collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
-                        .tasks[this.taskIndex].comments,
-                    itemId: id
-                }
-            );
+        const ans = await axios.post('/api/comments/' + id, { ...form.value, _method: 'patch'})
+            .then((response) => {
+                this.store.commit(
+                    'editItemIn',
+                    {
+                        name: this.name,
+                        payload: response.data.data,
+                        collectionName: this.collectionName,
+                        collection: this.store.state.boards[this.boardIndex].catalogs[this.catalogIndex]
+                            .tasks[this.taskIndex].comments,
+                        itemId: id
+                    }
+                );
 
-            form.value = { ...response.data.data };
-            
-            this.store.state.notify({
-                type: 'success',
-                title: "Zmieniono komentarz",
+                form.value = { ...response.data.data };
+                
+                this.store.state.notify({
+                    type: 'success',
+                    title: "Zmieniono komentarz",
+                });
+                return true;
+            })
+            .catch((error) => {
+                standardErrorApiHandler(error, this.store);
+                return false;
             });
-        })
-        .catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
+        return ans;
     }
 
     async delete(id) {

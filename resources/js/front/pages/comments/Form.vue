@@ -3,7 +3,7 @@
     <v-sheet class="sheet">
         <div v-if="!isNew">Edytuj komentarz</div>
         <div v-else>Dodaj komentarz</div>
-        <v-form @submit.prevent="submit()">
+        <v-form @submit.prevent="submit()" ref="formToSendComment">
             <v-textarea
                 v-model="form.description"
                 :rules="rules"
@@ -47,15 +47,16 @@
     const apiComments = new Comments(store);
     
     const form = ref({ task_id: store.state.route.params.taskId, description: '', attachments: [] });
+    const formToSendComment = ref(null);
     const newAttachment = ref(null);
     const commentId = ref(null);
     const isNew = ref(false);
 
     const rules = [
         value => {
-            if (value) return true
-
-            return 'Wprowadź wartość'
+            if (value?.length > 0) return true
+  
+            return 'Wprowadź wartość (min 1 znak)'
         },
     ];
 
@@ -87,9 +88,16 @@
     }
     
     async function submit () {
-        await apiComments.edit(commentId.value, form);
+        const { valid } = await formToSendComment.value.validate();
+        let ans = false;
+        
+        if (valid) {
+            ans = await apiComments.edit(commentId.value, form);
+        }
 
-        close();
+        if (ans) {
+            close();
+        }
     }
 
     async function removeEverythingAndEmitClose() {
