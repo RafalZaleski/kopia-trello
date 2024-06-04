@@ -100,73 +100,118 @@ export class Tasks {
         this.store.commit('startLoading');
 
         await axios.post('/api/tasks/' + taskId, { catalog_id: newCatalogId, position: newPosition, _method: 'patch'})
-        .then((response) => {
+            .then((response) => {
+                const oldCatalogIndex = this.store.state.boards[this.boardIndex]
+                    .catalogs.findIndex((elem) => elem.id == oldCatalogId);
 
-            const oldCatalogIndex = this.store.state.boards[this.boardIndex]
-                .catalogs.findIndex((elem) => elem.id == oldCatalogId);
+                if (newCatalogId == oldCatalogId) {
+                    this.store.commit(
+                        'editItemIn',
+                        {
+                            name: this.name,
+                            payload: response.data.data,
+                            collectionName: this.collectionName,
+                            collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                            itemId: taskId
+                        }
+                    );
 
-            if (newCatalogId == oldCatalogId) {
-                if (newPosition < oldPosition) {
-                    this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
-                        .filter((item) => item.position >= newPosition && item.position < oldPosition)
-                        .map((item) => item.position += 1);
+                    for (const taskIndex in this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks) {
+                        const task = this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks[taskIndex];
+                        if (newPosition < oldPosition) {
+                            if (task.position >= newPosition && task.position < oldPosition && task.id != taskId) {
+                                task.position += 1;
+                                this.store.commit(
+                                    'editItemIn',
+                                    {
+                                        name: this.name,
+                                        payload: task,
+                                        collectionName: this.collectionName,
+                                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                                        itemId: task.id
+                                    }
+                                );
+                            }
+                        } else {
+                            if (task.position <= newPosition && task.position > oldPosition && task.id != taskId) {
+                                task.position -= 1;
+                                this.store.commit(
+                                    'editItemIn',
+                                    {
+                                        name: this.name,
+                                        payload: task,
+                                        collectionName: this.collectionName,
+                                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                                        itemId: task.id
+                                    }
+                                );
+                            }
+                        }
+                    }
                 } else {
-                    this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
-                        .filter((item) => item.position <= newPosition && item.position > oldPosition)
-                        .map((item) => item.position -= 1);
+                    const newCatalogIndex = this.store.state.boards[this.boardIndex]
+                        .catalogs.findIndex((elem) => elem.id == newCatalogId);
+
+                    this.store.commit(
+                        'addItemIn',
+                        {
+                            name: this.name,
+                            payload: response.data.data,
+                            collectionName: this.collectionName,
+                            collection: this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks
+                        }
+                    );
+
+                    for (const taskIndex1 in this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks) {
+                        const task = this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks[taskIndex1];
+                        if (task.position > oldPosition) {
+                            task.position -= 1;
+                            this.store.commit(
+                                'editItemIn',
+                                {
+                                    name: this.name,
+                                    payload: task,
+                                    collectionName: this.collectionName,
+                                    collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                                    itemId: task.id
+                                }
+                            );
+                        }
+                    }
+
+                    for (const taskIndex2 in this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks) {
+                        const task = this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks[taskIndex2];
+                        if (task.position >= newPosition && task.id != taskId) {
+                            task.position += 1;
+                            this.store.commit(
+                                'editItemIn',
+                                {
+                                    name: this.name,
+                                    payload: task,
+                                    collectionName: this.collectionName,
+                                    collection: this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks,
+                                    itemId: task.id
+                                }
+                            );
+                        }
+                    }
+
+                    this.store.commit(
+                        'deleteItemIn',
+                        {
+                            name: this.name,
+                            payload: taskId,
+                            collectionName: this.collectionName,
+                            collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
+                        }
+                    );
                 }
 
-                this.store.commit(
-                    'editItemIn',
-                    {
-                        name: this.name,
-                        payload: response.data.data,
-                        collectionName: this.collectionName,
-                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
-                        itemId: taskId
-                    }
-                );
-            } else {
-                const newCatalogIndex = this.store.state.boards[this.boardIndex]
-                    .catalogs.findIndex((elem) => elem.id == newCatalogId);
-
-                this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks
-                    .filter((item) => item.position >= newPosition)
-                    .map((item) => item.position += 1);
-                
-                this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks
-                    .filter((item) => item.position > oldPosition)
-                    .map((item) => item.position -= 1);
-
-                this.store.commit(
-                    'deleteItemIn',
-                    {
-                        name: this.name,
-                        payload: response.data.data.id,
-                        collectionName: this.collectionName,
-                        collection: this.store.state.boards[this.boardIndex].catalogs[oldCatalogIndex].tasks,
-                    }
-                );
-
-                this.store.commit(
-                    'addItemIn',
-                    {
-                        name: this.name,
-                        payload: response.data.data,
-                        collectionName: this.collectionName,
-                        collection: this.store.state.boards[this.boardIndex].catalogs[newCatalogIndex].tasks
-                    }
-                );
-            }
-
-            
-            
-            this.store.state.notify({
-                type: 'success',
-                title: "Zmieniono zadanie",
+                this.store.state.notify({
+                    type: 'success',
+                    title: "Zmieniono zadanie",
             });
-        })
-        .catch((error) => standardErrorApiHandler(error, this.store));
+        }).catch((error) => standardErrorApiHandler(error, this.store));
 
         this.store.commit('stopLoading');
     }

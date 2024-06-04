@@ -33,6 +33,7 @@ export default createStore({
       state.login = false;
       state.boards = [];
       state.boardsSyncDate = null;
+      state.router.push({ name: 'home' });
     },
     login(state) {
       state.login = true;

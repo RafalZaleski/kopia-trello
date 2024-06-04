@@ -94,7 +94,7 @@ export class Catalogs {
         this.store.commit('startLoading');
 
         await axios.post('/api/catalogs/' + catalogId, { position: newPosition, _method: 'patch'})
-            .then((response) => {                
+            .then((response) => {        
                 this.store.commit(
                     'editItemIn',
                     {
@@ -105,7 +105,7 @@ export class Catalogs {
                         itemId: catalogId
                     }
                 );
-
+  
                 if (newPosition < oldPosition) {
                     this.store.state.boards[this.boardIndex].catalogs
                         .filter((item) => item.position >= newPosition && item.position < oldPosition && item.id != catalogId)

@@ -52,9 +52,17 @@ class TaskController extends Controller
     {
         $data = $request->validated();
 
-        $data['position'] = Task::select('position')
+        $position = Task::select('position')
             ->where('catalog_id', $data['catalog_id'])
-            ->max('position') + 1;
+            ->max('position');
+        
+        if (is_null($position)) {
+            $position = 0;
+        } else {
+            $position++;
+        }
+
+        $data['position'] =  $position;
 
         return new ApiTaskResource(Task::create($data));
     }

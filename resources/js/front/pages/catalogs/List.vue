@@ -141,8 +141,24 @@
   }
 
   onMounted(async () => {
+    sortElements();
     await filterCatalogsToShow();
   })
+
+  function sortElements() {
+    const boardIndex = store.state.boards
+      .findIndex((elem) => elem.id == store.state.route.params.boardId);
+
+    store.state.boards[boardIndex].catalogs
+      = [ ...store.state.boards[boardIndex].catalogs.sort((a, b) => a.position - b.position) ]
+    
+    for (const catalogIndex in store.state.boards[boardIndex].catalogs) {
+      store.state.boards[boardIndex].catalogs[catalogIndex].tasks
+        = [ ...store.state.boards[boardIndex].catalogs[catalogIndex].tasks.sort((a, b) => a.position - b.position) ];
+    }
+
+    localStorage.setItem('boards', JSON.stringify(store.state.boards));
+  }
 
   const handleDragStart = (itemData) => {
     if (dragElem.value !== false) {
@@ -266,6 +282,7 @@
     }
 
     if (dragElem.value.type === 'task') {
+      showCatalogs.value = null;
       newPosition -= 6;
       const newCatalogId = dragElemParent.id.substring(8);
       if (newPosition != dragElem.value.position || dragElem.value.catalog_id != newCatalogId) {
@@ -275,24 +292,13 @@
           newCatalogId,
           dragElem.value.position,
           newPosition
-        ).then(
-          async () => {
-            // if (!store.getters.useLocalStorage) {
-              await filterCatalogsToShow();
-            // }
-          }
         );
+        sortElements();
+        await filterCatalogsToShow();
       }
     } else {
       if (newPosition != dragElem.value.position) {
-        await apiCatalogs.editPosition(dragElem.value.id, dragElem.value.position, newPosition)
-          .then(
-            async () => {
-              // if (!store.getters.useLocalStorage) {
-                await filterCatalogsToShow();
-              // }
-            }
-          );
+        await apiCatalogs.editPosition(dragElem.value.id, dragElem.value.position, newPosition);
       }
     }
 

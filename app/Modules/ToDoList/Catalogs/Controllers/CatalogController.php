@@ -56,9 +56,17 @@ class CatalogController extends Controller
     {
         $data = $request->validated();
         
-        $data['position'] = Catalog::select('position')
+        $position = Catalog::select('position')
             ->where('board_id', $data['board_id'])
-            ->max('position') + 1;
+            ->max('position');
+        
+        if (is_null($position)) {
+            $position = 0;
+        } else {
+            $position++;
+        }
+
+        $data['position'] = $position;
 
         return new ApiCatalogResource(Catalog::create($data));
     }
