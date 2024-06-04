@@ -13,6 +13,7 @@ w cmd:
 - php artisan key:generate
 - php artisan optimize
 - php artisan migrate
+- php artisan storage:link
 
 - npm i
 
