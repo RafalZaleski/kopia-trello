@@ -27,7 +27,6 @@ class StoreTaskRequest extends FormRequest
             'description' => ['nullable', 'max:65536'],
             'date' => ['nullable', 'date_format:"Y-m-d H:i"'],
             'place' => ['nullable', 'max:255'],
-            'position' => ['required', 'gte:0'],
         ];
     }
 }

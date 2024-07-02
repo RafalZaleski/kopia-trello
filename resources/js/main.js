@@ -1,10 +1,12 @@
 import { createApp } from 'vue'
-import App from './front/App.vue'
+import App from './App.vue'
 
-import store from './front/store'
+import store from './store'
 
 import { createRouter, createWebHistory } from 'vue-router'
-import routes from './front/router'
+import routesAuth from './auth/router'
+import routesFriends from './friends/router'
+import routesListaZadan from './lista-zadan/router'
 
 import Notifications from '@kyvg/vue3-notification'
 
@@ -17,7 +19,7 @@ import { VTimePicker } from 'vuetify/labs/VTimePicker'
 
 const router = createRouter({
     history: createWebHistory(),
-    routes,
+    routes: [ ...routesAuth, ...routesFriends, ...routesListaZadan ],
   })
 
 const vuetify = createVuetify({

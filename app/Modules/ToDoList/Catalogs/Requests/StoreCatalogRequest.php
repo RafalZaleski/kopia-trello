@@ -25,7 +25,6 @@ class StoreCatalogRequest extends FormRequest
             'board_id' => ['required', 'gt:0'],
             'name' => ['required', 'min:1', 'max:255'],
             'description' => ['nullable', 'max:65536'],
-            'position' => ['required', 'gte:0'],
         ];
     }
 }

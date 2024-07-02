@@ -5,130 +5,175 @@ declare(strict_types=1);
 namespace App\Modules\ToDoList\Tasks\Controllers;
 
 use App\Http\Controllers\Controller;
-use App\Modules\ToDoList\Media\Resources\MediaResource;
+use App\Modules\Assets\Comments\Models\Comment;
+use App\Modules\Assets\Comments\Requests\StoreCommentRequest;
+use App\Modules\Assets\Comments\Requests\UpdateCommentRequest;
+use App\Modules\Assets\Comments\Resources\ApiCommentResource;
+use App\Modules\Assets\Media\Requests\MediaRequest;
+use App\Modules\Assets\Media\Resources\MediaResource;
+use App\Modules\ToDoList\Catalogs\Models\Catalog;
+use App\Modules\ToDoList\Catalogs\Services\CatalogService;
 use App\Modules\ToDoList\Tasks\Requests\StoreTaskRequest;
 use App\Modules\ToDoList\Tasks\Requests\UpdateTaskRequest;
-use App\Modules\ToDoList\Sync\Requests\SyncRequest;
 use App\Modules\ToDoList\Tasks\Resources\ApiTaskResource;
 use App\Modules\ToDoList\Tasks\Models\Task;
+use App\Modules\ToDoList\Tasks\Services\TaskService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Carbon;
 
 class TaskController extends Controller
 {
-    public function syncUpdated(SyncRequest $request): AnonymousResourceCollection
-    {
-        return ApiTaskResource::collection(
-            Task::select(['id', 'name'])
-                ->where('updated_at', '>=', Carbon::createFromTimestamp($request->get('date')))
-                ->get()
-        );
+    public function __construct(
+        private readonly TaskService $taskService,
+        private readonly CatalogService $catalogService,
+    ) {
     }
 
-    public function syncDeleted(SyncRequest $request): AnonymousResourceCollection
+    public function store(StoreTaskRequest $request): ApiTaskResource|JsonResponse
     {
-        return ApiTaskResource::collection(
-            Task::select(['id', 'name'])
-                ->where('deleted_at', '>=', Carbon::createFromTimestamp($request->get('date')))
-                ->onlyTrashed()
-                ->get()
-        );
-    }
+        $validatedData = $request->validated();
 
-    public function indexAll(): AnonymousResourceCollection
-    {
-        return ApiTaskResource::collection(Task::select(['id', 'name'])->orderBy('position')->get());
-    }
+        $catalog = Catalog::where(['id' => $validatedData['catalog_id']])->firstOrFail();
 
-    public function index(): AnonymousResourceCollection
-    {
-        $tasks = Task::select(['id', 'name'])->paginate();
-
-        return ApiTaskResource::collection($tasks);
-    }
-
-    public function store(StoreTaskRequest $request): ApiTaskResource
-    {
-        $data = $request->validated();
-
-        $position = Task::select('position')
-            ->where('catalog_id', $data['catalog_id'])
-            ->max('position');
-        
-        if (is_null($position)) {
-            $position = 0;
-        } else {
-            $position++;
+        if (!$this->catalogService->checkAccessToCatalog($catalog)) {
+            return response()->json(null, 403);
         }
 
-        $data['position'] =  $position;
+        $task = $this->taskService->store($validatedData);
 
-        return new ApiTaskResource(Task::create($data));
-    }
-
-    public function show(Task $task): ApiTaskResource
-    {
         return new ApiTaskResource($task);
     }
 
-    public function update(UpdateTaskRequest $request, Task $task): ApiTaskResource
+    public function show(Task $task): ApiTaskResource|JsonResponse
     {
-        $data = $request->validated();
-
-        if ($data['catalog_id'] == $task->catalog_id) {
-            if ($data['position'] < $task->position) {
-                Task::where('catalog_id', $data['catalog_id'])
-                    ->where('position', '>=', $data['position'])
-                    ->where('position', '<', $task->position)
-                    ->increment('position');
-            } else {
-                Task::where('catalog_id', $data['catalog_id'])
-                    ->where('position', '<=', $data['position'])
-                    ->where('position', '>', $task->position)
-                    ->decrement('position');
-            }
-        } else {
-            Task::where('catalog_id', $data['catalog_id'])
-                ->where('position', '>=', $data['position'])
-                ->increment('position');
-            
-            Task::where('catalog_id', $task->catalog_id)
-                ->where('position', '>', $task->position)
-                ->decrement('position');
+        if (!$this->taskService->checkAccessToTask($task)) {
+            return response()->json(null, 403);
         }
-        
-        $task->update($data);
+
+        return new ApiTaskResource($task);
+    }
+
+    public function update(UpdateTaskRequest $request, Task $task): ApiTaskResource|JsonResponse
+    {
+        $validatedData = $request->validated();
+
+        if (
+            !$this->taskService->checkAccessToTask($task)
+            || !$this->catalogService->checkAccessToCatalog(Catalog::where(['id' => $validatedData['catalog_id']])->firstOrFail())
+        ) {
+            return response()->json(null, 403);
+        }
+
+        $task = $this->taskService->update($validatedData, $task);
 
         return new ApiTaskResource($task);
     }
 
     public function destroy(Task $task): JsonResponse
     {
-        $catalogId = $task->catalog_id;
-        $position = $task->position;
+        if (!$this->taskService->checkAccessToTask($task)) {
+            return response()->json(null, 403);
+        }
 
-        $task->delete();
-
-        Task::where('catalog_id', $catalogId)
-            ->where('position', '>', $position)
-            ->decrement('position');
+        $this->taskService->destroy($task);
 
         return response()->json(null, 204);
     }
 
-    public function addAttachment(Task $task): JsonResponse|MediaResource
+    public function getComment(Task $task, Comment $comment): JsonResponse|ApiCommentResource
     {
-        if(request()->hasFile('file') && request()->file('file')->isValid()){
-            return new MediaResource($task->addMediaFromRequest('file')->toMediaCollection('task_attachments'));
+        if (!$this->taskService->checkAccessToComment($comment)) {
+            return response()->json(null, 403);
         }
 
-        return response()->json(null, 500);
+        return new ApiCommentResource($comment);
+    }
+
+    public function addComment(Task $task, StoreCommentRequest $request): JsonResponse|ApiCommentResource
+    {
+        if (!$this->taskService->checkAccessToTask($task)) {
+            return response()->json(null, 403);
+        }
+
+        $validatedData = $request->validated();
+
+        $comment = $this->taskService->addComment($task, $validatedData);
+
+        return new ApiCommentResource($comment);
+    }
+
+    public function editComment(Task $task, Comment $comment, UpdateCommentRequest $request): JsonResponse|ApiCommentResource
+    {
+        if (!$this->taskService->checkAccessToComment($comment)) {
+            return response()->json(null, 403);
+        }
+
+        $validatedData = $request->validated();
+
+        $comment = $this->taskService->editComment($comment, $validatedData);
+
+        return new ApiCommentResource($comment);
+    }
+
+    public function removeComment(Task $task, Comment $comment): JsonResponse
+    {
+        if (!$this->taskService->checkAccessToComment($comment)) {
+            return response()->json(null, 403);
+        }
+
+        $this->taskService->removeComment($comment);
+
+        return response()->json(null, 204);
+    }
+
+    public function addCommentAttachment(Task $task, Comment $comment, MediaRequest $request): JsonResponse|MediaResource
+    {
+        if (!$this->taskService->checkAccessToComment($comment)) {
+            return response()->json(null, 403);
+        }
+
+        $ans = $this->taskService->addCommentAttachment($comment, $request);
+
+        if (!$ans) {
+            return response()->json(null, 500);
+        }
+
+        return $ans;
+    }
+
+    public function removeCommentAttachment(Task $task, Comment $comment, int $id): JsonResponse
+    {
+        if (!$this->taskService->checkAccessToComment($comment)) {
+            return response()->json(null, 403);
+        }
+        
+        $this->taskService->removeCommentAttachment($comment, $id);
+
+        return response()->json(null, 204);
+    }
+
+    public function addAttachment(Task $task, MediaRequest $request): JsonResponse|MediaResource
+    {
+        if (!$this->taskService->checkAccessToTask($task)) {
+            return response()->json(null, 403);
+        }
+
+        $ans = $this->taskService->addAttachment($task, $request);
+
+        if (!$ans) {
+            return response()->json(null, 500);
+        }
+
+        return $ans;
     }
 
     public function removeAttachment(Task $task, int $id): JsonResponse
     {
-        $task->deleteMedia($id);
+        if (!$this->taskService->checkAccessToTask($task)) {
+            return response()->json(null, 403);
+        }
+        
+        $this->taskService->removeAttachment($task, $id);
+
         return response()->json(null, 204);
     }
 }

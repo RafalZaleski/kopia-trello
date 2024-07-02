@@ -1,0 +1,17 @@
+@media (max-width: 400px) {
+    .sheet {
+      width: 96%;
+      top: 70px;
+      left: 2%;
+      max-height: 70%;
+    }
+  }
+  
+  @media (min-width: 400px) {
+    .sheet {
+      width: 400px;
+      top: 100px;
+      left: calc(50% - 200px);
+      max-height: 70%;
+    }
+  }

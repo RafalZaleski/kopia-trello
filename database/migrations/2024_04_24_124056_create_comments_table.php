@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('task_id')->constrained()->cascadeOnDelete();
+            $table->morphs('model');
             $table->text('description');
             $table->timestampsTz();
             $table->softDeletesTz();

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Modules\ToDoList\Tasks\Resources;
 
-use App\Modules\ToDoList\Comments\Resources\ApiCommentResource;
-use App\Modules\ToDoList\Media\Resources\MediaResource;
+use App\Modules\Assets\Comments\Resources\ApiCommentResource;
+use App\Modules\Assets\Media\Resources\MediaResource;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 

@@ -27,7 +27,7 @@ class UpdateTaskRequest extends FormRequest
             'description' => ['nullable', 'max:65536'],
             'date' => ['nullable', 'date_format:"Y-m-d H:i"'],
             'place' => ['nullable', 'max:255'],
-            'position' => ['gte:0'],
+            'position' => ['nullable', 'gte:0'],
         ];
     }
 }

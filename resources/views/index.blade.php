@@ -12,6 +12,7 @@
         <link rel="manifest" href="manifest.json" />
         
         @vite('resources/js/app.js')
+        @vite('resources/css/app.css')
 
         <!-- <script>
             if ('serviceWorker' in navigator) {

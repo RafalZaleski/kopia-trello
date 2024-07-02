@@ -5,108 +5,67 @@ declare(strict_types=1);
 namespace App\Modules\ToDoList\Catalogs\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Modules\ToDoList\Boards\Models\Board;
+use App\Modules\ToDoList\Boards\Services\BoardService;
 use App\Modules\ToDoList\Catalogs\Requests\StoreCatalogRequest;
 use App\Modules\ToDoList\Catalogs\Requests\UpdateCatalogRequest;
-use App\Modules\ToDoList\Sync\Requests\SyncRequest;
 use App\Modules\ToDoList\Catalogs\Resources\ApiCatalogResource;
 use App\Modules\ToDoList\Catalogs\Models\Catalog;
+use App\Modules\ToDoList\Catalogs\Services\CatalogService;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
-use Illuminate\Support\Carbon;
 
 class CatalogController extends Controller
 {
-    public function syncUpdated(SyncRequest $request): AnonymousResourceCollection
-    {
-        return ApiCatalogResource::collection(
-            Catalog::select(['id', 'name'])
-                ->where('updated_at', '>=', Carbon::createFromTimestamp($request->get('date')))
-                ->get()
-        );
+    public function __construct(
+        private readonly CatalogService $catalogService,
+        private readonly BoardService $boardService,
+    ) {
     }
 
-    public function syncDeleted(SyncRequest $request): AnonymousResourceCollection
+    public function store(StoreCatalogRequest $request): ApiCatalogResource|JsonResponse
     {
-        return ApiCatalogResource::collection(
-            Catalog::select(['id', 'name'])
-                ->where('deleted_at', '>=', Carbon::createFromTimestamp($request->get('date')))
-                ->onlyTrashed()
-                ->get()
-        );
-    }
-
-    public function indexAll(): AnonymousResourceCollection
-    {
-        return ApiCatalogResource::collection(
-            Catalog::select(['id', 'board_id', 'name', 'description', 'position'])
-                ->orderBy('position')
-                ->with('tasks')
-                ->get()
-        );
-    }
-
-    public function index(): AnonymousResourceCollection
-    {
-        $catalogs = Catalog::select(['id', 'name'])->paginate();
-
-        return ApiCatalogResource::collection($catalogs);
-    }
-
-    public function store(StoreCatalogRequest $request): ApiCatalogResource
-    {
-        $data = $request->validated();
+        $validatedData = $request->validated();
         
-        $position = Catalog::select('position')
-            ->where('board_id', $data['board_id'])
-            ->max('position');
-        
-        if (is_null($position)) {
-            $position = 0;
-        } else {
-            $position++;
+        $board = Board::where(['id' => $validatedData['board_id']])->firstOrFail();
+
+        if (!$this->boardService->checkAccessToBoard($board)) {
+            return response()->json(null, 403);
         }
+        
+        $catalog = $this->catalogService->store($validatedData);
 
-        $data['position'] = $position;
-
-        return new ApiCatalogResource(Catalog::create($data));
-    }
-
-    public function show(Catalog $catalog): ApiCatalogResource
-    {
         return new ApiCatalogResource($catalog);
     }
 
-    public function update(UpdateCatalogRequest $request, Catalog $catalog): ApiCatalogResource
+    public function show(Catalog $catalog): ApiCatalogResource|JsonResponse
     {
-        $data = $request->validated();
-
-        if ($data['position'] < $catalog->position) {
-            Catalog::where('board_id', $catalog->board_id)
-                ->where('position', '>=', $data['position'])
-                ->where('position', '<', $catalog->position)
-                ->increment('position');
-        } else {
-            Catalog::where('board_id', $catalog->board_id)
-                ->where('position', '<=', $data['position'])
-                ->where('position', '>', $catalog->position)
-                ->decrement('position');
+        if (!$this->catalogService->checkAccessToCatalog($catalog)) {
+            return response()->json(null, 403);
         }
 
-        $catalog->update($data);
+        return new ApiCatalogResource($catalog);
+    }
+
+    public function update(UpdateCatalogRequest $request, Catalog $catalog): ApiCatalogResource|JsonResponse
+    {
+        $validatedData = $request->validated();
+
+        if (!$this->catalogService->checkAccessToCatalog($catalog)) {
+            return response()->json(null, 403);
+        }
+           
+        $catalog = $this->catalogService->update($validatedData, $catalog);
 
         return new ApiCatalogResource($catalog);
     }
 
     public function destroy(Catalog $catalog): JsonResponse
     {
-        $boardId = $catalog->board_id;
-        $position = $catalog->position;
-
-        $catalog->delete();
-
-        Catalog::where('board_id', $boardId)
-            ->where('position', '>', $position)
-            ->decrement('position');
+        if (!$this->catalogService->checkAccessToCatalog($catalog)) {
+            return response()->json(null, 403);
+        }
+        
+        $this->catalogService->destroy($catalog);
 
         return response()->json(null, 204);
     }

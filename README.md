@@ -1,5 +1,5 @@
 stack:
-- php: 8.1
+- php: 8.3
 - node: 22.2.0
 - npm: 10.7.0
 
@@ -19,4 +19,4 @@ w cmd:
 
 dla szybkiego przetestowania:
 - npm run dev
-- php artisan serve --port=80
+-  nie zapomnij o nginx lub o czymś w stylu: "php artisan serve --port=80"

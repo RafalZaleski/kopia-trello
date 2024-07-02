@@ -24,7 +24,7 @@ class UpdateCatalogRequest extends FormRequest
         return [
             'name' => ['min:1', 'max:255'],
             'description' => ['nullable', 'max:65536'],
-            'position' => ['gte:0'],
+            'position' => ['nullable', 'gte:0'],
         ];
     }
 }
