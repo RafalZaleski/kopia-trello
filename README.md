@@ -20,3 +20,5 @@ w cmd:
 dla szybkiego przetestowania:
 - npm run dev
 -  nie zapomnij o nginx lub o czymś w stylu: "php artisan serve --port=80"
+
+trochę bardziej rozbudowane DEMO: https://zarro.com.pl/
